@@ -88,8 +88,8 @@ function getColoredSlices(data::Vector{T}, dataBG::Union{Nothing,ImageMeta},
 end
 
 
-function getColoredSlices(data::Vector{T}, dataBG, edgeMask, coloring,
-                          minval, maxval, params) where {T<:AxisArray}
+function getColoredSlices(data::AbstractArray{T}, dataBG, edgeMask, coloring,
+                          minval, maxval, params) where {T}
 
   slices = (params[:sliceX],params[:sliceY],params[:sliceZ])
   proj = params[:spatialMIP] ? "MIP" : slices
@@ -118,9 +118,9 @@ function getColoredSlices(data::Vector{T}, dataBG, edgeMask, coloring,
         all_maps = existing_cmaps()
         colormap = cmap( all_maps[coloring[1].cmap+1])
 
-        cdata_zx = dogyDoge(cdataBG_zx, cdata_zx, first(colormap))
-        cdata_zy = dogyDoge(cdataBG_zy, cdata_zy, first(colormap))
-        cdata_xy = dogyDoge(cdataBG_xy, cdata_xy, first(colormap))
+        cdata_zx = overlay(cdataBG_zx, cdata_zx, first(colormap))
+        cdata_zy = overlay(cdataBG_zy, cdata_zy, first(colormap))
+        cdata_xy = overlay(cdataBG_xy, cdata_xy, first(colormap))
       end
     elseif get(params,:hideFG, false)
       cdata_zx = cdataBG_zx
@@ -137,11 +137,10 @@ function getColoredSlices(data::Vector{T}, dataBG, edgeMask, coloring,
       cdataEM_zy = colorize(zyEM,cc,minval,maxval)
       cdataEM_xy = colorize(xyEM,cc,minval,maxval)
 
-      cdata_zx = dogyDoge(cdata_zx, cdataEM_zx, RGBA{N0f8}(0,0,0,0))
-      cdata_zy = dogyDoge(cdata_zy, cdataEM_zy, RGBA{N0f8}(0,0,0,0))
-      cdata_xy = dogyDoge(cdata_xy, cdataEM_xy, RGBA{N0f8}(0,0,0,0))
+      cdata_zx = overlay(cdata_zx, cdataEM_zx, RGBA{N0f8}(0,0,0,0))
+      cdata_zy = overlay(cdata_zy, cdataEM_zy, RGBA{N0f8}(0,0,0,0))
+      cdata_xy = overlay(cdata_xy, cdataEM_xy, RGBA{N0f8}(0,0,0,0))
     end
-
   end
 
   return cdata_zx, cdata_zy, cdata_xy

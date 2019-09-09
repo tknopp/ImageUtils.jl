@@ -41,4 +41,20 @@ for U in [IAL,ITL]
   @test z == ones(3,3)
 end
 
+I = ones(1,3,3,3,3)
+
+IA = makeAxisArray(I, [1.0,1.0,1.0]./256, -[0.5,0.5,0.0].+[1.0,1.0,0.0]./256, 1.0 )
+IT = TransformedArray(I, [1.0,1.0,1.0]./256, -[0.5,0.5,0.0].+[1.0,1.0,0.0]./256, [0.0,0.0,1.0])
+IAL = sliceTimeDim(IA, 3)
+ITL = sliceTimeDim(IT, 3)
+
+params = Dict{Symbol,Any}()
+params[:sliceX] = 1
+params[:sliceY] = 1
+params[:sliceZ] = 1
+params[:spatialMIP] = true
+params[:blendChannels] = true
+getColoredSlices(ITL, nothing, nothing, [ColoringParams(0,1,"gray")], [0.0], [1.0], params)
+
+
 end

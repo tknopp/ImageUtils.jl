@@ -51,7 +51,6 @@ end
 function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
                  minval, maxval) where {T<:Real}
   I = [colorize(sliceColorDim(data,i), coloring[i], minval[i], maxval[i]) for i = 1:size(data,1)]
-  @show typeof(I)
   return linearDodge(I)
 end
 
