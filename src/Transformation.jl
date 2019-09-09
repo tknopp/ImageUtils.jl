@@ -2,6 +2,21 @@ export interpolateToGrid, interpolateToCommonGrid, interpolateToRefImage,
        indexFromBGToFG
 
 
+function interpolateToGrid(image::TransformedArray{T,3}, fovOut::Vector{Float64},
+               offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...) where T
+
+  pixspacing = collect(pixelspacing(image))
+  offset = collect(imcenter(image))
+
+  pixelspacingOut = fovOut ./ gridSizeOut
+
+  imOut = interpolateToGrid(image.data, pixspacing, offset, image.rot, fovOut, offsetOut, gridSizeOut)
+
+  offset = (offsetOut .- 0.5.*fovOut .+ 0.5.*pixelspacingOut)
+  imOutAxis = TransformedArray(imOut, pixelspacingOut, offset)
+  return imOutAxis
+end
+
 
 function interpolateToGrid(image::ImageMeta{T,3}, fovOut::Vector{Float64},
                 offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...) where T

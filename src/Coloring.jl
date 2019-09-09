@@ -39,20 +39,28 @@ function getBounds( data, coloring, minval, maxval)
   return lowerBound, higherBound
 end
 
-function colorize(data, coloring::Vector{ColoringParams}, minval, maxval, params)
-  return colorize(data, coloring, minval, maxval, params[:blendChannels]::Bool, params[:activeChannel]::Int)
-end
-
-function colorize(data, coloring::Vector{ColoringParams}, minval, maxval, 
-                  blendChannels::Bool, chan::Int)
-  if blendChannels
-    return linearDodge([colorize(data[i], coloring[i], minval[i], maxval[i]) for i in eachindex(data)])
+function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
+                  minval, maxval, params) where {T<:Real}
+  if params[:blendChannels]
+    return colorize(data, coloring, minval, maxval)
   else
-    return colorize(data[chan], coloring[chan], minval[chan], maxval[chan])
+    return colorize(data, coloring, minval, maxval, params[:activeChannel])
   end
 end
 
-function colorize(data::AbstractArray{T}, c::ColoringParams, 
+function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
+                 minval, maxval) where {T<:Real}
+  I = [colorize(sliceColorDim(data,i), coloring[i], minval[i], maxval[i]) for i = 1:size(data,1)]
+  @show typeof(I)
+  return linearDodge(I)
+end
+
+function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
+                 minval, maxval, chan::Int) where {T<:Real}
+  return colorize(sliceColorDim(data,chan), coloring[chan], minval[chan], maxval[chan])
+end
+
+function colorize(data::AbstractArray{T}, c::ColoringParams,
                   minval::Real, maxval::Real) where {T<:Real}
 
   lowerBound, higherBound = getBounds(data, c, minval, maxval)
@@ -334,4 +342,3 @@ function existing_cmaps()
    "yellowredalpha", "tobi", "tobitr", "redwhite","timemap","UPthreshold",
    "perfusionmap","magma","inferno","plasma","Liver","viridis"]
 end
-

@@ -1,62 +1,83 @@
-export getColoredSlices, getColoredSlicesMovie
+export sliceColorDim, sliceTimeDim, sliceSpatialDim, threeSlices,
+       getColoredSlices, getColoredSlicesMovie
 
-# copy paste
-function _toslice2(A,proj,dim)
-  if proj == "MIP"
-      return dropdims(maximum(A, dims=dim),dims=dim)
-  elseif proj == "SUM"
-    return dropdims(sum(A, dim),dims=dim)
+### sliceColorDim ###
+
+sliceColorDim(A::AbstractArray{T,3}, proj::Integer) where T = A[proj,:,:]
+sliceColorDim(A::AbstractArray{T,4}, proj::Integer) where T = A[proj,:,:,:]
+
+### sliceTimeDim ###
+
+function sliceTimeDim(A::AbstractArray{T,D}, proj::String) where {T,D}
+  if  proj == "MIP"
+    return dropdims(maximum(A, dims=D), dims=D)
+  elseif proj == "TTP"
+    error("not yet implemented!")
+    #data_ = [maximum(d, 4) for d in m.data]
+    #data_ = [  mip(d,4) for d in m.data]
+  #elseif params[:frameProj] == 2 && ndims(m.data[1]) == 4
+  #data_ = [timetopeak(d, alpha=params[:TTPThresh], alpha2=params[:TTPThresh]) for d in m.data]
+  end
+end
+
+function sliceTimeDim(A::AbstractArray{T,5}, proj::Integer) where T
+  return getindex(A,:,:,:,:,proj)
+end
+
+function sliceTimeDim(A::AbstractArray{T,4}, proj::Integer) where T
+  return getindex(A,:,:,:,proj)
+end
+
+### sliceSpatialDim ###
+
+function sliceSpatialDim(A::AbstractArray{T,3}, proj::Union{Tuple,Vector}, dim::Integer) where T
+  if dim == 1
+    return A[proj[1],:,:]
+  elseif dim == 2
+    return A[:,proj[2],:]
   else
-    if dim == 1
-      return A[proj[1],:,:]
-    elseif dim == 2
-      return A[:,proj[2],:]
-    else
-      return A[:,:,proj[3]]
-    end
+    return A[:,:,proj[3]]
   end
 end
 
-function threeSlices(data, proj)
-  zx = flipud(fliplr(flipud(_toslice2(data, proj, 2)))')
-  zy = _toslice2(data, proj, 1)'
-  xy = flipud(_toslice2(data, proj, 3))
-  return zx,zy,xy
-end
-
-function threeSlices(data::AxisArray, proj)
-  zx_ = _toslice2(data.data, proj, 2)
-  zy_ = _toslice2(data.data, proj, 1)
-  xy_ = _toslice2(data.data, proj, 3)
-  zx = AxisArray(rotr90(zx_), AxisArrays.axes(data)[3], AxisArrays.axes(data)[1])#  :z, :x)
-  zy = AxisArray(zy_', AxisArrays.axes(data)[3], AxisArrays.axes(data)[2]) #   :z, :y)
-  xy = AxisArray(rotr90(xy_)', AxisArrays.axes(data)[1], AxisArrays.axes(data)[2])#  , :x, :y)
-  return zx,zy,xy
-end
-
-function threeSlices(data::Vector{T}, proj) where {T<:AxisArray}
-  l=length(data)
-  zxArray = Array{AxisArrays.AxisArray,1}(undef,l)
-  zyArray = Array{AxisArrays.AxisArray,1}(undef,l)
-  xyArray = Array{AxisArrays.AxisArray,1}(undef,l)
-  for (k,d) in enumerate(data)
-    zx_ = _toslice2(d.data, proj, 2)
-    zy_ = _toslice2(d.data, proj, 1)
-    xy_ = _toslice2(d.data, proj, 3)
-    zxArray[k] = AxisArray(rotr90(zx_), AxisArrays.axes(d)[3], AxisArrays.axes(d)[1])#  :z, :x)
-    zyArray[k] = AxisArray(zy_', AxisArrays.axes(d)[3], AxisArrays.axes(d)[2]) #:z, :y)
-    xyArray[k] = AxisArray(rotr90(xy_)', AxisArrays.axes(d)[1], AxisArrays.axes(d)[2])#  , :x, :y)
-              # rotr90(x)' = flipdim(x,1) = flipud(x), but type stable
+function sliceSpatialDim(A::AbstractArray{T,4}, proj::Union{Tuple,Vector}, dim::Integer) where T
+  if dim == 1
+    return A[:,proj[1],:,:]
+  elseif dim == 2
+    return A[:,:,proj[2],:]
+  else
+    return A[:,:,:,proj[3]]
   end
-  return zxArray,zyArray,xyArray
 end
 
-function threeSlices(data::Vector, proj)
-  zx = [flipud(fliplr(flipud(_toslice2(d, proj, 2)))') for d in data]
-  zy = [_toslice2(d, proj, 1)' for d in data]
-  xy = [flipud(_toslice2(d, proj, 3)) for d in data]
-  return zx,zy,xy
+function sliceSpatialDim(A::AbstractArray{T,D}, proj::String, dim::Integer) where {T,D}
+  d = (D == 4) ? dim + 1 : dim
+  if proj == "MIP"
+    return dropdims(maximum(A, dims=d),dims=d)
+  elseif proj == "SUM"
+    return dropdims(sum(A, d),dims=d)
+  else
+    error("proj=$proj not available!")
+  end
 end
+
+### threeSlices ###
+
+function threeSlices(data::AbstractArray{T,3}, proj) where T
+  zx = reverse(permutedims(sliceSpatialDim(data, proj, 2),(2,1)),dims=2)
+  zy = permutedims(sliceSpatialDim(data, proj, 1), (2,1))
+  xy = reverse(sliceSpatialDim(data, proj, 3), dims=1)
+  return zx, zy, xy
+end
+
+function threeSlices(data::AbstractArray{T,4}, proj) where T
+  zx = reverse(permutedims(sliceSpatialDim(data, proj, 2),(1,3,2)),dims=3)
+  zy = permutedims(sliceSpatialDim(data, proj, 1), (1,3,2))
+  xy = reverse(sliceSpatialDim(data, proj, 3), dims=2)
+  return zx, zy, xy
+end
+
+### getColoredSlices ###
 
 function getColoredSlices(data::Vector{T}, dataBG::Union{Nothing,ImageMeta},
             edgeMask::Union{Nothing,ImageMeta}, coloring, minval,maxval, params) where {T<:ImageMeta}
@@ -68,7 +89,8 @@ end
 
 
 function getColoredSlices(data::Vector{T}, dataBG, edgeMask, coloring,
-                          minval,maxval, params) where {T<:AxisArray}
+                          minval, maxval, params) where {T<:AxisArray}
+
   slices = (params[:sliceX],params[:sliceY],params[:sliceZ])
   proj = params[:spatialMIP] ? "MIP" : slices
 
@@ -78,49 +100,49 @@ function getColoredSlices(data::Vector{T}, dataBG, edgeMask, coloring,
   cdata_zy = colorize(zy,coloring,minval,maxval,params)
   cdata_xy = colorize(xy,coloring,minval,maxval,params)
 
-      if dataBG != nothing
-        projBG = params[:spatialMIPBG] ? "MIP" : slices
-        zxBG, zyBG, xyBG = threeSlices(dataBG, projBG) # no MIP for BG data!!!
+  if dataBG != nothing
+    projBG = params[:spatialMIPBG] ? "MIP" : slices
+    zxBG, zyBG, xyBG = threeSlices(dataBG, projBG) # no MIP for BG data!!!
 
-        minval,maxval = extrema(dataBG)
-        cdataBG_zx = colorize(zxBG,params[:coloringBG],minval,maxval)
-        cdataBG_zy = colorize(zyBG,params[:coloringBG],minval,maxval)
-        cdataBG_xy = colorize(xyBG,params[:coloringBG],minval,maxval)
+    minval,maxval = extrema(dataBG)
+    cdataBG_zx = colorize(zxBG,params[:coloringBG],minval,maxval)
+    cdataBG_zy = colorize(zyBG,params[:coloringBG],minval,maxval)
+    cdataBG_xy = colorize(xyBG,params[:coloringBG],minval,maxval)
 
-        if !(get(params,:hideFG, false)) && !(get(params,:hideBG, false))
-          if get(params,:translucentBlending, false)
-            cdata_zx = blend(cdataBG_zx, cdata_zx)
-            cdata_zy = blend(cdataBG_zy, cdata_zy)
-            cdata_xy = blend(cdataBG_xy, cdata_xy)
-          else
-            all_maps = existing_cmaps()
-            colormap = cmap( all_maps[coloring[1].cmap+1])
+    if !(get(params,:hideFG, false)) && !(get(params,:hideBG, false))
+      if get(params,:translucentBlending, false)
+        cdata_zx = blend(cdataBG_zx, cdata_zx)
+        cdata_zy = blend(cdataBG_zy, cdata_zy)
+        cdata_xy = blend(cdataBG_xy, cdata_xy)
+      else
+        all_maps = existing_cmaps()
+        colormap = cmap( all_maps[coloring[1].cmap+1])
 
-            cdata_zx = dogyDoge(cdataBG_zx, cdata_zx, first(colormap))
-            cdata_zy = dogyDoge(cdataBG_zy, cdata_zy, first(colormap))
-            cdata_xy = dogyDoge(cdataBG_xy, cdata_xy, first(colormap))
-          end
-        elseif get(params,:hideFG, false)
-          cdata_zx = cdataBG_zx
-          cdata_zy = cdataBG_zy
-          cdata_xy = cdataBG_xy
-        end
-
-        if get(params,:showSFFOV, false)
-          minval,maxval = (0,1)
-          zxEM, zyEM, xyEM = threeSlices(edgeMask, slices) # no MIP for mask data!!!
-
-          cc= ColoringParams(0.0,1.0,0)
-          cdataEM_zx = colorize(zxEM,cc,minval,maxval)
-          cdataEM_zy = colorize(zyEM,cc,minval,maxval)
-          cdataEM_xy = colorize(xyEM,cc,minval,maxval)
-
-          cdata_zx = dogyDoge(cdata_zx, cdataEM_zx, RGBA{N0f8}(0,0,0,0))
-          cdata_zy = dogyDoge(cdata_zy, cdataEM_zy, RGBA{N0f8}(0,0,0,0))
-          cdata_xy = dogyDoge(cdata_xy, cdataEM_xy, RGBA{N0f8}(0,0,0,0))
-        end
-
+        cdata_zx = dogyDoge(cdataBG_zx, cdata_zx, first(colormap))
+        cdata_zy = dogyDoge(cdataBG_zy, cdata_zy, first(colormap))
+        cdata_xy = dogyDoge(cdataBG_xy, cdata_xy, first(colormap))
       end
+    elseif get(params,:hideFG, false)
+      cdata_zx = cdataBG_zx
+      cdata_zy = cdataBG_zy
+      cdata_xy = cdataBG_xy
+    end
+
+    if get(params,:showSFFOV, false)
+      minval,maxval = (0,1)
+      zxEM, zyEM, xyEM = threeSlices(edgeMask, slices) # no MIP for mask data!!!
+
+      cc = ColoringParams(0.0,1.0,0)
+      cdataEM_zx = colorize(zxEM,cc,minval,maxval)
+      cdataEM_zy = colorize(zyEM,cc,minval,maxval)
+      cdataEM_xy = colorize(xyEM,cc,minval,maxval)
+
+      cdata_zx = dogyDoge(cdata_zx, cdataEM_zx, RGBA{N0f8}(0,0,0,0))
+      cdata_zy = dogyDoge(cdata_zy, cdataEM_zy, RGBA{N0f8}(0,0,0,0))
+      cdata_xy = dogyDoge(cdata_xy, cdataEM_xy, RGBA{N0f8}(0,0,0,0))
+    end
+
+  end
 
   return cdata_zx, cdata_zy, cdata_xy
 end

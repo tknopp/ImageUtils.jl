@@ -61,7 +61,7 @@ function exportMovie(filename, im::AbstractArray{T,3}; pixelResizeFactor=1) wher
 
   rgbdata = convert(Array{RGB},datai)
   rgbdata = reverse(rgbdata,dims=1)
-  @info "saving $filename"
+  @debug "saving $filename"
   save(filename, rgbdata)
 end
 
@@ -72,5 +72,3 @@ function exportMovies(filename, data::Vector; kargs...)
   exportMovie(file*"_xz.gif", data[2]; kargs...)
   exportMovie(file*"_yz.gif", data[3]; kargs...)
 end
-
-

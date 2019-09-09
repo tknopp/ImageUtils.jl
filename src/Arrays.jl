@@ -36,9 +36,9 @@ end
 
 mutable struct TransformedArray{T,N} <: AbstractArray{T,N}
     data::Array{T,N}
-    rot::Vector{Float64}
     spacing::Vector{Float64}
     offset::Vector{Float64}
+    rot::Vector{Float64}
 
 
   function TransformedArray(data::AbstractArray{T,N},
@@ -102,4 +102,4 @@ Base.similar(img::TransformedArray, ::Type{T}, shape::Dims) where {T} =
 
 ImageCore.pixelspacing(img::TransformedArray) = img.spacing
 
-imcenter(img::TransformedArray) = img.offset
+imcenter(img::TransformedArray) = img.offset .+ 0.5.*img.spacing.*collect(size(img.data)) .- 0.5.*img.spacing

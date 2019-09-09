@@ -4,7 +4,7 @@
 
 Random.seed!(1)
 
-N = 64 
+N = 64
 I = Images.shepp_logan(N,N)
 
 IC = colorize(I, ColoringParams(0,1,"gray"), 0.0, 1.0)
@@ -44,7 +44,14 @@ exportImage("img/coloring5.png", over)
 
 
 I = reshape(Images.shepp_logan(N,N),1,N,N)
-I = cat(I,I,dims=1)
+O = reshape(O,1,N,N)
+I = cat(I,O,dims=1)
+
+OC = colorize(I, [ColoringParams(0,1,"gray"), ColoringParams(0,1,"red"),],
+     [0.0,0.0], [1.0,1.0])
+
+exportImage("img/coloring6.png", OC)
+#@testImg("coloring6.png")
 
 
 
