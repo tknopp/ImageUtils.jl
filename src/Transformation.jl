@@ -1,102 +1,37 @@
-using Interpolations
-
-export translation, minVoxelSize, joinedFOV, joinedGridSize,
-       interpolateToGrid, interpolateToCommonGrid, interpolateToRefImage,
+export interpolateToGrid, interpolateToCommonGrid, interpolateToRefImage,
        indexFromBGToFG
 
-function translation(im0, im1)
-  N = size(im0)
 
-  f0 = fft(im0)
-  f1 = fft(im1)
-  ir = abs(ifft(f0 .* conj(f1) ./ (abs(f0) .* abs(f1))))
-  t = [ind2sub(N, indmax(ir))...] .- 1
-  for d=1:length(t)
-    if t[d] > N[d] / 2
-      t[d] -= N[d]
-    end
-  end
-  t
+
+function interpolateToGrid(image::ImageMeta{T,3}, fovOut::Vector{Float64}, 
+                offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...)
+                
+  rot = get(image, "rotation", [0.0,0.0,0.0])
+  imOutAxis = interpolateToGrid(image.data, rot, fovOut, offsetOut, gridSizeOut)
+  return copyproperties(image, imOutAxis)
 end
 
-
-
-
-
-function minVoxelSize(images...)
-  minVox = Float64[1e10,1e10,1e10]
-
-  for im in images
-    currVoxSize = collect(converttometer(pixelspacing(im)))
-    for i=1:3
-      minVox[i] = min(minVox[i], currVoxSize[i])
-    end
-  end
-  minVox
-end
-
-function joinedFOV(images...)
-
-  fovMin = Float64[1e9,1e9,1e9]
-  fovMax = Float64[-1e9,-1e9,-1e9]
-
-  for im in images
-    currOffset = collect(converttometer(imcenter(im)))
-    for i=1:3
-      currFov = size(im,i).* converttometer(pixelspacing(im))[i]
-      fovMin[i] = min(fovMin[i], currOffset[i] - currFov/2)
-      fovMax[i] = max(fovMax[i], currOffset[i] + currFov/2)
-    end
-  end
-
-  fov = fovMax .- fovMin
-  offset = (fovMax .+ fovMin) ./ 2
-  return fov, offset
-end
-
-function joinedGridSize(images...)
-  fov, offset = joinedFOV(images...)
-  minVoxSize = minVoxelSize(images...)
-  return ceil(Int, fov ./ minVoxSize)
-end
-
-function interpolateToGrid(image,fovOut, offsetOut, gridSizeOut, R )
-  interpType = BSpline(Linear())
-  imOut = zeros(eltype(image), gridSizeOut[1],gridSizeOut[2],gridSizeOut[3])
-  imInterp = extrapolate(interpolate(data(image), interpType),zero(eltype(image)))
-  imVoxelSize = collect(converttometer(pixelspacing(image)))
-  imSize = [size(image,1),size(image,2),size(image,3)]
-  imFov = imSize.*imVoxelSize
-  imOffset = collect(converttometer(imcenter(image)))
-  offsetPixel = (-fovOut./2 + imFov./2 + offsetOut-imOffset)./ imVoxelSize
-  diffSpacing = (fovOut ./ imVoxelSize ) ./ gridSizeOut
+function interpolateToGrid(image::AxisArray{T,3}, rot::Vector{Float64}, fovOut::Vector{Float64}, 
+                offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...)
+                
+  pixspacing = collect(converttometer(pixelspacing(image))),
+  offset = collect(converttometer(imcenter(image)))                 
+                 
   pixelspacingOut = fovOut ./ gridSizeOut
-  @debug "" imVoxelSize imSize imFov imOffset offsetPixel diffSpacing pixelspacingOut
-  display(R)
-  ax = 0.5+gridSizeOut[1]/2
-  ay = 0.5+gridSizeOut[2]/2
-  az = 0.5+gridSizeOut[3]/2
-
-  bx = R[:,1]*diffSpacing[1]
-  by = R[:,2]*diffSpacing[2]
-  bz = R[:,3]*diffSpacing[3]
-
-  cx = gridSizeOut[1]/2*diffSpacing[1]+0.5+offsetPixel[1]
-  cy = gridSizeOut[2]/2*diffSpacing[2]+0.5+offsetPixel[2]
-  cz = gridSizeOut[3]/2*diffSpacing[3]+0.5+offsetPixel[3]
-
-  _innerInterpolation!(imOut, imInterp, imSize, gridSizeOut, ax, ay, az, bx, by, bz, cx, cy, cz)
-
+  
+  imOut = interpolateToGrid(image.data, pixspacing, offset, rot, fovOut, offsetOut, gridSizeOut)
+  
   offset = (offsetOut .- 0.5.*fovOut .+ 0.5.*pixelspacingOut) .* 1000 .* u"mm"
   imOutAxis = AxisArray(imOut, (:x,:y,:z),tuple((pixelspacingOut .* 1000 .* u"mm")...),tuple(offset...))
 
-  imOut = copyproperties(image, imOutAxis) # create an image object
-  return imOut
-
+  return imOutAxis
 end
 
-function interpolateToGrid(image, fovOut, offsetOut, gridSizeOut; interpDegree=1)
-  imOut = zeros(eltype(image), gridSizeOut[1],gridSizeOut[2],gridSizeOut[3])
+function interpolateToGrid(image::Array{T,3}, pixspacing::Vector{Float64}, offset::Vector{Float64},
+                           rot::Vector{Float64}, fovOut::Vector{Float64}, offsetOut::Vector{Float64}, 
+                           gridSizeOut::Vector{Int64}; interpDegree=1) where T
+                 
+  imOut = zeros(eltype(image), gridSizeOut[1], gridSizeOut[2], gridSizeOut[3])
 
   if interpDegree == 1
     interpType = BSpline(Linear())
@@ -109,19 +44,17 @@ function interpolateToGrid(image, fovOut, offsetOut, gridSizeOut; interpDegree=1
   # Interpolations.jl
   imInterp = extrapolate(interpolate(data(image), interpType),zero(eltype(image)))
 
-  imVoxelSize = collect(converttometer(pixelspacing(image)))
+  
   imSize = [size(image,1),size(image,2),size(image,3)]
-  imFov = imSize.*imVoxelSize
-  imOffset = collect(converttometer(imcenter(image)))
-  rotation = get(image, "rotation", [0.0,0.0,0.0])
+  imFov = imSize.*pixspacing
 
 
-  offsetPixel = (-fovOut./2 + imFov./2 + offsetOut-imOffset)./ imVoxelSize
-  #diffSpacing = (fovOut ./ gridSizeOut) ./ imVoxelSize
-  diffSpacing = (fovOut ./ imVoxelSize ) ./ gridSizeOut
+  offsetPixel = (-fovOut./2 + imFov./2 + offsetOut - offset)./ pixspacing
+  #diffSpacing = (fovOut ./ gridSizeOut) ./ pixspacing
+  diffSpacing = (fovOut ./ pixspacing ) ./ gridSizeOut
   pixelspacingOut = fovOut ./ gridSizeOut
 
-  r = rotation
+  r = rot
   Rx = [1 0 0; 0 cos(r[1]) -sin(r[1]); 0 sin(r[1]) cos(r[1])]
   Ry = [cos(r[2]) 0 sin(r[2]); 0 1 0; -sin(r[2]) 0 cos(r[2])]
   Rz = [cos(r[3]) -sin(r[3]) 0; sin(r[3]) cos(r[3]) 0; 0 0 1]
@@ -142,10 +75,6 @@ function interpolateToGrid(image, fovOut, offsetOut, gridSizeOut; interpDegree=1
 
   _innerInterpolation!(imOut, imInterp, imSize, gridSizeOut, ax, ay, az, bx, by, bz, cx, cy, cz)
 
-  offset = (offsetOut .- 0.5.*fovOut .+ 0.5.*pixelspacingOut) .* 1000 .* u"mm"
-  imOutAxis = AxisArray(imOut, (:x,:y,:z),tuple((pixelspacingOut .* 1000 .* u"mm")...),tuple(offset...))
-
-  imOut = copyproperties(image, imOutAxis) # create an image object
   return imOut
 end
 
@@ -162,51 +91,13 @@ function _innerInterpolation!(imOut, imInterp, imSize, gridSizeOut, ax, ay, az, 
       end
     end
   end
+  return
 end
 
-function interpolateToCommonGrid(refImage, dynImage; kargs...)
-  error("TODO: Port to new image infrastructure")
-  if ndims(dynImage) == 4
-    buf = getindex(dynImage,:,:,:,1)
-  else
-    buf = dynImage
-  end
-  # getindexim is like [] but the result is an image object, which is essential
-  # in order to preserve the metadata of the image
 
-  fovJoint, offsetJoint = joinedFOV( refImage, buf)
-  sizeJoint = joinedGridSize( refImage, buf )
 
-  Uref = interpolateToGrid(refImage,fovJoint,offsetJoint,sizeJoint; kargs...)
+### interpolateToRefImage ###
 
-  if ndims(dynImage) == 3
-    UInterp =  interpolateToGrid(dynImage,fovJoint,offsetJoint,sizeJoint; kargs...)
-  else
-
-    U = zeros(eltype(dynImage),sizeJoint...,size(dynImage,4))
-    for l=1:size(dynImage,4)
-      im = getindex(dynImage,:,:,:,l)
-      U[:,:,:,l] = interpolateToGrid(im,fovJoint,offsetJoint,sizeJoint; kargs...)
-    end
-    UInterp = copyproperties(dynImage,U) #This is not entirely correct. dynImage has a different pixelspacing
-    UInterp["timedim"] = 4
-    UInterp["pixelspacing"] = fovJoint ./ sizeJoint
-  end
-  return Uref, UInterp
-end
-
-function interpolateToRefImage(background, foreground, R, t; offset=nothing)
-  foreground = changeCenter(foreground, t)
-  refVoxelSize = collect(converttometer(pixelspacing(background)))
-  refSize = [size(background)...][1:3]
-  refFov = [size(background)...][1:3].*refVoxelSize
-  offset==nothing ? refOffset = collect(converttometer(imcenter(background))) : refOffset=offset
-  if ndims(foreground) == 3
-    @debug "interpTorefImage" refVoxelSize refSize refFov refOffset
-    UInterp =  interpolateToGrid(foreground,refFov,refOffset,refSize,R)
-    return UInterp
-  end
-end
 
 function interpolateToRefImage(refImage, dynImage; offset=nothing,kargs...)
   refVoxelSize = collect(converttometer(pixelspacing(refImage)))

@@ -14,5 +14,7 @@ macro testImg(filename)
     )
 end
 
+include("Transformation.jl")
+
 include("Coloring.jl")
 

@@ -32,10 +32,15 @@ O = zeros(N,N)
 O[10:30,10:30] .= 1.0
 
 OC = colorize(O, ColoringParams(0,1,"red"), 0.0, 1.0)
+
 over = overlay(IC, OC, cmap("red")[1])
 exportImage("img/coloring4.png", over)
 @testImg("coloring4.png")
 
+
+over = blend(IC, OC)
+exportImage("img/coloring5.png", over)
+@testImg("coloring5.png")
 
 
 I = reshape(Images.shepp_logan(N,N),1,N,N)
