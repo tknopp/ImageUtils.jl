@@ -1,0 +1,3 @@
+module ImageUtils
+
+end # module

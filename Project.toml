@@ -1,0 +1,15 @@
+name = "ImageUtils"
+uuid = "8ad4436d-4835-5a14-8bce-3ae014d2950b"
+authors = ["Tobias Knopp <tobias@knoppweb.de>"]
+version = "0.1.0"
+
+[deps]
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
+
+[compat]
+julia = "^1"
