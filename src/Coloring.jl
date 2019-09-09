@@ -1,4 +1,5 @@
-export ColoringParams, colorize, blend, reorderColor, existing_cmaps, cmap
+export ColoringParams, colorize, blend, reorderColor, existing_cmaps, cmap,
+       overlay, linearDoge
 
 struct ColoringParams
   cmin::Float64
@@ -134,32 +135,32 @@ end
 linearDodge(images...) = linearDodge([images...])
 
 
-function dogyDoge(imageBG::AbstractArray{T,D},imageFG::AbstractArray{U,D},
+function overlay(imageBG::AbstractArray{T,D}, imageFG::AbstractArray{U,D},
                   translucentColor) where {T,U,D}
   C = similar(imageFG, RGBA{N0f8})
-  dogyDoge!(imageBG, imageFG, C, 0, translucentColor)
+  overlay!(imageBG, imageFG, C, 0, translucentColor)
   return C
 end
 
 # This version operates on a 3D bg and a 4D fg
-function dogyDoge(imageBG::AbstractArray{T,3},imageFG::AbstractArray{U,4},
+function overlay(imageBG::AbstractArray{T,3}, imageFG::AbstractArray{U,4},
                   translucentColor) where {T,U}
   C = similar(imageFG, RGBA{N0f8})
   offset = 0
   for l=1:size(C,4)
-    dogyDoge!(imageBG, imageFG, C, offset, translucentColor)
+    overlay!(imageBG, imageFG, C, offset, translucentColor)
     offset += length(imageBG)
   end
   return C
 end
 
-function dogyDoge!(imageBG, imageFG, C, offset, translucentColor)
+function overlay!(imageBG, imageFG, C, offset, translucentColor)
   for l=1:length(imageBG)
     IFG = imageFG[l+offset]
     IBG = imageBG[l]
     C[l+offset] = ( red(IFG) == red(translucentColor) &&
                     green(IFG) == green(translucentColor) &&
-		    blue(IFG) == blue(translucentColor)) ? IBG : IFG
+		                blue(IFG) == blue(translucentColor)) ? IBG : IFG
   end
   return C
 end
@@ -170,33 +171,33 @@ end
 
 # This version works on the RGB level and alpha
 # is associated to the foreground color.
-function blend(bg::C,fg::C, alpha) where {C<:Color}
+function blend(bg::C, fg::C, alpha) where {C<:Color}
   #alpha = oftype(eltype(C),alpha)
   output = alpha*fg + (1-alpha)*bg
 end
 
-#Type stable?
-function blend(bg::C,fg::C) where {C<:TransparentColor}
+# Type stable?
+function blend(bg::C, fg::C) where {C<:TransparentColor}
   α = alpha(bg)
   β  = alpha(fg) * (one(α)-α)
   return mapc((x,y)->α*x + β*y, bg, fg)
 end
 
 # this should be replaced by weighted_color_mean(w1, c1, c2) as soon as
-# weighted_color_mean supports all colors since that is waht it is
-function blend(bg::Color,fg::TransparentColor)
+# weighted_color_mean supports all colors since that is what it is
+function blend(bg::Color, fg::TransparentColor)
   output = blend(bg, color(fg), alpha(fg))
 end
 
 # This version operates on two equally dimensioned images
-function blend(imageBG::AbstractArray{T,D},imageFG::AbstractArray{U,D}) where {T,U,D}
+function blend(imageBG::AbstractArray{T,D}, imageFG::AbstractArray{U,D}) where {T,U,D}
   C = similar(imageFG, RGBA{N0f8})
-  blend!(imageBG,imageFG,C)
+  blend!(imageBG, imageFG, C)
   return C
 end
 
 # This version operates on a 3D bg and a 4D fg
-function blend(imageBG::AbstractArray{T,3},imageFG::AbstractArray{U,4}) where {T,U}
+function blend(imageBG::AbstractArray{T,3}, imageFG::AbstractArray{U,4}) where {T,U}
   C = similar(imageFG, RGBA{N0f8})
   offset = 0
   for l=1:size(C,4)
@@ -206,9 +207,9 @@ function blend(imageBG::AbstractArray{T,3},imageFG::AbstractArray{U,4}) where {T
   return C
 end
 
-function blend!(imageBG,imageFG,C, offset=0)
+function blend!(imageBG, imageFG, C, offset=0)
   for l=1:length(imageBG)
-    C[l+offset] =  blend(imageBG[l],imageFG[l+offset])
+    C[l+offset] = blend(imageBG[l],imageFG[l+offset])
   end
   return C
 end
