@@ -11,6 +11,7 @@ using Random
 using Statistics
 using LinearAlgebra
 using Interpolations
+using ImageCore
 
 @reexport using Colors
 @reexport using FixedPointNumbers

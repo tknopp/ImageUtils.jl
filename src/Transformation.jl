@@ -3,34 +3,39 @@ export interpolateToGrid, interpolateToCommonGrid, interpolateToRefImage,
 
 
 
-function interpolateToGrid(image::ImageMeta{T,3}, fovOut::Vector{Float64}, 
-                offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...)
-                
+function interpolateToGrid(image::ImageMeta{T,3}, fovOut::Vector{Float64},
+                offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...) where T
+
   rot = get(image, "rotation", [0.0,0.0,0.0])
   imOutAxis = interpolateToGrid(image.data, rot, fovOut, offsetOut, gridSizeOut)
   return copyproperties(image, imOutAxis)
 end
 
-function interpolateToGrid(image::AxisArray{T,3}, rot::Vector{Float64}, fovOut::Vector{Float64}, 
-                offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...)
-                
-  pixspacing = collect(converttometer(pixelspacing(image))),
-  offset = collect(converttometer(imcenter(image)))                 
-                 
+function interpolateToGrid(image::AxisArray{T,3}, rot::Vector{Float64}, fovOut::Vector{Float64},
+                offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...) where T
+
+  #pixspacing = collect(converttometer(pixelspacing(image)))
+  #offset = collect(converttometer(imcenter(image)))
+  pixspacing = collect(pixelspacing(image))
+  offset = collect(imcenter(image))
+
   pixelspacingOut = fovOut ./ gridSizeOut
-  
+
   imOut = interpolateToGrid(image.data, pixspacing, offset, rot, fovOut, offsetOut, gridSizeOut)
-  
-  offset = (offsetOut .- 0.5.*fovOut .+ 0.5.*pixelspacingOut) .* 1000 .* u"mm"
-  imOutAxis = AxisArray(imOut, (:x,:y,:z),tuple((pixelspacingOut .* 1000 .* u"mm")...),tuple(offset...))
+
+  #offset = (offsetOut .- 0.5.*fovOut .+ 0.5.*pixelspacingOut) .* 1000 .* u"mm"
+  #imOutAxis = AxisArray(imOut, (:x,:y,:z),tuple((pixelspacingOut .* 1000 .* u"mm")...),tuple(offset...))
+  offset = (offsetOut .- 0.5.*fovOut .+ 0.5.*pixelspacingOut)
+  imOutAxis = AxisArray(imOut, (:x,:y,:z),tuple((pixelspacingOut)...),tuple(offset...))
+
 
   return imOutAxis
 end
 
 function interpolateToGrid(image::Array{T,3}, pixspacing::Vector{Float64}, offset::Vector{Float64},
-                           rot::Vector{Float64}, fovOut::Vector{Float64}, offsetOut::Vector{Float64}, 
+                           rot::Vector{Float64}, fovOut::Vector{Float64}, offsetOut::Vector{Float64},
                            gridSizeOut::Vector{Int64}; interpDegree=1) where T
-                 
+
   imOut = zeros(eltype(image), gridSizeOut[1], gridSizeOut[2], gridSizeOut[3])
 
   if interpDegree == 1
@@ -41,10 +46,14 @@ function interpolateToGrid(image::Array{T,3}, pixspacing::Vector{Float64}, offse
     interpType = BSpline(Cubic(Reflect()))
   end
 
-  # Interpolations.jl
-  imInterp = extrapolate(interpolate(data(image), interpType),zero(eltype(image)))
+  tmp = ( size(image,1)==1 ? NoInterp() : interpType,
+          size(image,2)==1 ? NoInterp() : interpType,
+          size(image,3)==1 ? NoInterp() : interpType )
 
-  
+  # Interpolations.jl
+  imInterp = extrapolate(interpolate(image, tmp), zero(eltype(image)))
+
+
   imSize = [size(image,1),size(image,2),size(image,3)]
   imFov = imSize.*pixspacing
 
@@ -215,19 +224,19 @@ function indexFromBGToFG(refImage, data, params::Dict; offset=nothing)
                      params[:rotY]+params[:rotBGY],
                      params[:rotZ]+params[:rotBGZ]]
 
-  refVoxelSize = collect(converttometer(pixelspacing(refImage)))
+  refVoxelSize = collect(pixelspacing(refImage))
   refSize = [size(refImage)...][1:3]
   refFov = [size(refImage)...][1:3].*refVoxelSize
-  offset==nothing ? refOffset = collect(converttometer(imcenter(refImage))) : refOffset=offset
+  offset==nothing ? refOffset = collect(imcenter(refImage)) : refOffset=offset
 
   fovOut = refFov
   offsetOut = refOffset
   gridSizeOut = refSize
 
-  imVoxelSize = collect(converttometer(pixelspacing(image)))
+  imVoxelSize = collect(pixelspacing(image))
   imSize = [size(image,1),size(image,2),size(image,3)]
   imFov = imSize.*imVoxelSize
-  imOffset = collect(converttometer(imcenter(image)))
+  imOffset = collect(imcenter(image))
   rotation = get(image, "rotation", [0.0,0.0,0.0])
 
 
