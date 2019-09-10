@@ -9,8 +9,8 @@ mkpath("correct/")
 
 macro testImg(filename)
   return :(
-    im1 = load(joinpath("img", $filename));
-    im2 = load(joinpath("correct", $filename));
+    im1 = ImageMagick.load(joinpath("img", $filename));
+    im2 = ImageMagick.load(joinpath("correct", $filename));
     @test im1 == im2
     )
 end
