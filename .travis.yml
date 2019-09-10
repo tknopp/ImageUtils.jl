@@ -2,8 +2,9 @@
 language: julia
 dist: xenial
 os:
-#  - linux
   - osx
+  - linux
+
 julia:
   - 1.0
   - 1.1

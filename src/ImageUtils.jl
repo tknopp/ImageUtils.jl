@@ -2,8 +2,8 @@ module ImageUtils
 
 using Reexport
 using ImageMagick
-using FileIO
-import FileIO.save
+#using FileIO
+#import FileIO.save
 using ColorVectorSpace
 using AxisArrays
 const axes = Base.axes

@@ -1,4 +1,4 @@
-@testset "Testing Slicing submodule" begin
+@testset "Testing Slicing Submodule" begin
 
 I = ones(1,3,3,3,3)
 

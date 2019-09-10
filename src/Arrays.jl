@@ -35,15 +35,15 @@ end
 
 
 mutable struct TransformedArray{T,N} <: AbstractArray{T,N}
-    data::Array{T,N}
-    spacing::Vector{Float64}
-    offset::Vector{Float64}
-    rot::Vector{Float64}
+  data::Array{T,N}
+  spacing::Vector{Float64}
+  offset::Vector{Float64}
+  rot::Vector{Float64}
 
 
   function TransformedArray(data::AbstractArray{T,N},
-     spacing::Vector{Float64}, offset::Vector{Float64}=zeros(N), rot::Vector{Float64}=zeros(N)) where {T,N}
-    new{T,N}(data, spacing, offset, rot)
+   spacing::Vector{Float64}, offset::Vector{Float64}=zeros(N), rot::Vector{Float64}=zeros(N)) where {T,N}
+  new{T,N}(data, spacing, offset, rot)
   end
 
 end
@@ -57,36 +57,82 @@ Base.IndexStyle(::Type{M}) where {M<:TransformedArray} = IndexStyle(datatype(M))
 # getindex and setindex!
 
 @inline function Base.getindex(img::TransformedArray{T,1}, i::Int) where T
-    @boundscheck checkbounds(img.data, i)
-    @inbounds ret = img.data[i]
-    ret
+  @boundscheck checkbounds(img.data, i)
+  @inbounds ret = img.data[i]
+  ret
 end
 @inline function Base.getindex(img::TransformedArray, i::Int)
-    @boundscheck checkbounds(img.data, i)
-    @inbounds ret = img.data[i]
-    ret
+  @boundscheck checkbounds(img.data, i)
+  @inbounds ret = img.data[i]
+  ret
 end
 @inline function Base.getindex(img::TransformedArray{T,N}, I::Vararg{Int,N}) where {T,N}
-    @boundscheck checkbounds(img.data, I...)
-    @inbounds ret = img.data[I...]
-    ret
+  @boundscheck checkbounds(img.data, I...)
+  @inbounds ret = img.data[I...]
+  ret
 end
 
+function Base.getindex(img::TransformedArray{T,N}, c, x::Integer, y::Union{Colon,AbstractRange},
+                       z::Union{Colon,AbstractRange}, rest...) where {T,N}
+  ret = TransformedArray(img.data[c,x,y,z,rest...],
+                         img.spacing[2:3], img.offset[2:3], img.rot) # what to do with rot?
+  ret
+end
+
+function Base.getindex(img::TransformedArray{T,N}, c, x::Union{Colon,AbstractRange}, y::Integer,
+                       z::Union{Colon,AbstractRange}, rest...) where {T,N}
+  ret = TransformedArray(img.data[c,x,y,z,rest...],
+                         img.spacing[1:2:3], img.offset[1:2:3], img.rot) # what to do with rot?
+  ret
+end
+
+function Base.getindex(img::TransformedArray{T,N}, c, x::Union{Colon,AbstractRange},
+                       y::Union{Colon,AbstractRange},
+                       z::Integer, rest...) where {T,N}
+  ret = TransformedArray(img.data[c,x,y,z,rest...],
+                         img.spacing[1:2], img.offset[1:2], img.rot) # what to do with rot?
+  ret
+end
+
+function Base.getindex(img::TransformedArray{T,3}, x::Integer, y::Union{Colon,AbstractRange},
+                       z::Union{Colon,AbstractRange}, rest...) where {T}
+  ret = TransformedArray(img.data[x,y,z,rest...],
+                         img.spacing[2:3], img.offset[2:3], img.rot) # what to do with rot?
+  ret
+end
+
+function Base.getindex(img::TransformedArray{T,3}, x::Union{Colon,AbstractRange}, y::Integer,
+                       z::Union{Colon,AbstractRange}, rest...) where {T}
+  ret = TransformedArray(img.data[x,y,z,rest...],
+                         img.spacing[1:2:3], img.offset[1:2:3], img.rot) # what to do with rot?
+  ret
+end
+
+function Base.getindex(img::TransformedArray{T,3}, x::Union{Colon,AbstractRange},
+                       y::Union{Colon,AbstractRange},
+                       z::Integer, rest...) where {T}
+  ret = TransformedArray(img.data[x,y,z,rest...],
+                         img.spacing[1:2], img.offset[1:2], img.rot) # what to do with rot?
+  ret
+end
+
+
 @inline function Base.setindex!(img::TransformedArray{T,1}, val, i::Int) where T
-    @boundscheck checkbounds(img.data, i)
-    @inbounds img.data[i] = val
-    val
+  @boundscheck checkbounds(img.data, i)
+  @inbounds img.data[i] = val
+  val
 end
 @inline function Base.setindex!(img::TransformedArray, val, i::Int)
-    @boundscheck checkbounds(img.data, i)
-    @inbounds img.data[i] = val
-    val
+  @boundscheck checkbounds(img.data, i)
+  @inbounds img.data[i] = val
+  val
 end
 @inline function Base.setindex!(img::TransformedArray{T,N}, val, I::Vararg{Int,N}) where {T,N}
-    @boundscheck checkbounds(img.data, I...)
-    @inbounds img.data[I...] = val
-    val
+  @boundscheck checkbounds(img.data, I...)
+  @inbounds img.data[I...] = val
+  val
 end
+
 
 #Base.copy(img::ImageMeta) = ImageMeta(copy(img.data), deepcopy(img.properties))
 
@@ -98,7 +144,7 @@ end
 
 # similar
 Base.similar(img::TransformedArray, ::Type{T}, shape::Dims) where {T} =
-    TransformedArray(similar(img.data, T, shape), deepcopy(img.rot), deepcopy(img.spacing), deepcopy(img.offset))
+  TransformedArray(similar(img.data, T, shape), deepcopy(img.rot), deepcopy(img.spacing), deepcopy(img.offset))
 
 ImageCore.pixelspacing(img::TransformedArray) = img.spacing
 

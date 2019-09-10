@@ -1,4 +1,4 @@
-@testset "Testing General submodule" begin
+@testset "Testing Coloring Submodule" begin
 
 @test ColoringParams(0, 1, 0) == ColoringParams(0, 1, "gray")
 

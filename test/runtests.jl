@@ -1,7 +1,8 @@
 using ImageUtils
 using Test
-using FileIO
+#using FileIO
 using Random
+using ImageMagick
 
 mkpath("img/")
 mkpath("correct/")

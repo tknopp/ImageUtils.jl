@@ -21,7 +21,7 @@ function exportImage(filename, im::AbstractMatrix{T}; pixelResizeFactor=1) where
   dataResized = Images.imresize(im,(newSize[1],newSize[2]))
   rgbdata = convert(Array{RGB},dataResized)
   rgbdata = reverse(rgbdata,dims=1)
-  save(filename, rgbdata)
+  ImageMagick.save(filename, rgbdata)
 end
 
 function exportImage(filename, data::Vector{T}; kargs...) where {T<:AbstractMatrix}
@@ -62,7 +62,7 @@ function exportMovie(filename, im::AbstractArray{T,3}; pixelResizeFactor=1) wher
   rgbdata = convert(Array{RGB},datai)
   rgbdata = reverse(rgbdata,dims=1)
   @debug "saving $filename"
-  save(filename, rgbdata)
+  ImageMagick.save(filename, rgbdata)
 end
 
 
