@@ -71,75 +71,70 @@ function threeSlices(data::AbstractArray{T,3}, proj) where T
 end
 
 function threeSlices(data::AbstractArray{T,4}, proj) where T
-  zx = reverse(permutedims(sliceSpatialDim(data, proj, 2),(1,3,2)),dims=3)
-  zy = permutedims(sliceSpatialDim(data, proj, 1), (1,3,2))
-  xy = reverse(sliceSpatialDim(data, proj, 3), dims=2)
-  return zx, zy, xy
+  zx = sliceSpatialDim(data, proj, 2)
+  zy = sliceSpatialDim(data, proj, 1)
+  xy = sliceSpatialDim(data, proj, 3)
+  return _changeDims(zx, zy, xy)
+end
+
+function _changeDims(zx, zy, xy)
+  zx_ = reverse(permutedims(zx,(1,3,2)),dims=3)
+  zy_ = permutedims(zy, (1,3,2))
+  xy_ = reverse(xy, dims=2)
+  return zx_, zy_, xy_
 end
 
 ### getColoredSlices ###
 
-function getColoredSlices(data::Vector{T}, dataBG::Union{Nothing,ImageMeta},
-            edgeMask::Union{Nothing,ImageMeta}, coloring, minval,maxval, params) where {T<:ImageMeta}
-    axesDataFG = map(x->x.data, data)
-    axesDataBG = dataBG == nothing ? nothing : dataBG.data
-    axesEdgeMask = edgeMask == nothing ? nothing : edgeMask.data
-    return getColoredSlices(axesDataFG, axesDataBG, edgeMask, coloring, minval,maxval, params)
-end
-
-
-function getColoredSlices(data::AbstractArray{T}, dataBG, edgeMask, coloring,
+function getColoredSlices(data::AbstractArray{T,4}, dataBG, coloring,
                           minval, maxval, params) where {T}
-
   slices = (params[:sliceX],params[:sliceY],params[:sliceZ])
   proj = params[:spatialMIP] ? "MIP" : slices
+  
+  return getColoredSlices(data, dataBG, coloring, minval, maxval, proj, params[:blendChannels], params[:activeChannel], params[:coloringBG], get(params,:hideFG, false), get(params,:hideBG, false),
+      get(params,:translucentBlending, false), params[:spatialMIPBG] ? "MIP" : slices)                          
+end
+
+function getColoredSlices(data::AbstractArray{T,4}, dataBG, coloring,
+                          minval, maxval, proj, blendChannels, 
+                          activeChannels, coloringBG, hideFG, hideBG, 
+                          translucentBlending, projBG) where {T}
 
   zx, zy, xy = threeSlices(data, proj)
 
-  cdata_zx = colorize(zx,coloring,minval,maxval,params)
-  cdata_zy = colorize(zy,coloring,minval,maxval,params)
-  cdata_xy = colorize(xy,coloring,minval,maxval,params)
+  #zx = data[:,slices[1],:,:]
+  #zy = data[:,:,slices[2],:]
+  #xy = data[:,:,:,slices[3]]
 
-  if dataBG != nothing
-    projBG = params[:spatialMIPBG] ? "MIP" : slices
-    zxBG, zyBG, xyBG = threeSlices(dataBG, projBG) # no MIP for BG data!!!
+  cdata_zx = colorize(zx,coloring,minval,maxval,blendChannels,activeChannels)
+  cdata_zy = colorize(zy,coloring,minval,maxval,blendChannels,activeChannels)
+  cdata_xy = colorize(xy,coloring,minval,maxval,blendChannels,activeChannels)
+
+  if !isempty(dataBG)
+    zxBG, zyBG, xyBG = threeSlices(dataBG, projBG)  #no MIP for BG data!!!
 
     minval,maxval = extrema(dataBG)
-    cdataBG_zx = colorize(zxBG,params[:coloringBG],minval,maxval)
-    cdataBG_zy = colorize(zyBG,params[:coloringBG],minval,maxval)
-    cdataBG_xy = colorize(xyBG,params[:coloringBG],minval,maxval)
+    cdataBG_zx = colorize(zxBG,coloringBG,minval,maxval)
+    cdataBG_zy = colorize(zyBG,coloringBG,minval,maxval)
+    cdataBG_xy = colorize(xyBG,coloringBG,minval,maxval)
 
-    if !(get(params,:hideFG, false)) && !(get(params,:hideBG, false))
-      if get(params,:translucentBlending, false)
+    if !hideFG && !hideBG
+      if translucentBlending
         cdata_zx = blend(cdataBG_zx, cdata_zx)
         cdata_zy = blend(cdataBG_zy, cdata_zy)
         cdata_xy = blend(cdataBG_xy, cdata_xy)
       else
-        all_maps = existing_cmaps()
-        colormap = cmap( all_maps[coloring[1].cmap+1])
+        #all_maps = existing_cmaps()
+        colormap = cmap( coloring[1].cmap)
 
         cdata_zx = overlay(cdataBG_zx, cdata_zx, first(colormap))
         cdata_zy = overlay(cdataBG_zy, cdata_zy, first(colormap))
         cdata_xy = overlay(cdataBG_xy, cdata_xy, first(colormap))
       end
-    elseif get(params,:hideFG, false)
+    elseif hideFG
       cdata_zx = cdataBG_zx
       cdata_zy = cdataBG_zy
       cdata_xy = cdataBG_xy
-    end
-
-    if get(params,:showSFFOV, false)
-      minval,maxval = (0,1)
-      zxEM, zyEM, xyEM = threeSlices(edgeMask, slices) # no MIP for mask data!!!
-
-      cc = ColoringParams(0.0,1.0,0)
-      cdataEM_zx = colorize(zxEM,cc,minval,maxval)
-      cdataEM_zy = colorize(zyEM,cc,minval,maxval)
-      cdataEM_xy = colorize(xyEM,cc,minval,maxval)
-
-      cdata_zx = overlay(cdata_zx, cdataEM_zx, RGBA{N0f8}(0,0,0,0))
-      cdata_zy = overlay(cdata_zy, cdataEM_zy, RGBA{N0f8}(0,0,0,0))
-      cdata_xy = overlay(cdata_xy, cdataEM_xy, RGBA{N0f8}(0,0,0,0))
     end
   end
 
@@ -152,13 +147,12 @@ function getInterpAndColoredSlices(data, dataBG, coloring, minval,maxval, params
   if dataBG != nothing
     dataFG = interpolateToRefImage(dataBG, data, params)
     dataBG = interpolateToRefImage(dataBG, params)
-    edgeMask = getEdgeMask(dataBG, data, params)
   else
     dataFG = data
-    dataBG = edgeMask = nothing
+    dataBG = nothing
   end
 
-  cdata_zx, cdata_zy, cdata_xy = getColoredSlices(dataFG, dataBG, edgeMask, coloring, minval, maxval, params)
+  cdata_zx, cdata_zy, cdata_xy = getColoredSlices(dataFG, dataBG, coloring, minval, maxval, params)
   return cdata_zx, cdata_zy, cdata_xy
 end
 

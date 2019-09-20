@@ -1,6 +1,6 @@
 export makeAxisArray, converttometer, imcenter, TransformedArray
 
-converttometer(x) = ustrip.(uconvert.(u"m",x))
+#converttometer(x) = ustrip.(uconvert.(u"m",x))
 imcenter(img::AxisArray) = map(x->(0.5*(last(x)+first(x))), ImageAxes.filter_space_axes(AxisArrays.axes(img), axisvalues(img)))
 imcenter(img::ImageMeta) = imcenter(data(img))
 
@@ -42,7 +42,7 @@ mutable struct TransformedArray{T,N} <: AbstractArray{T,N}
 
 
   function TransformedArray(data::AbstractArray{T,N},
-   spacing::Vector{Float64}, offset::Vector{Float64}=zeros(N), rot::Vector{Float64}=zeros(N)) where {T,N}
+   spacing::Vector{Float64}=ones(N), offset::Vector{Float64}=zeros(N), rot::Vector{Float64}=zeros(N)) where {T,N}
   new{T,N}(data, spacing, offset, rot)
   end
 
@@ -94,17 +94,26 @@ function Base.getindex(img::TransformedArray{T,N}, c, x::Union{Colon,AbstractRan
   ret
 end
 
+function Base.getindex(img::TransformedArray{T,N}, c, x::Union{Colon,AbstractRange},
+                       y::Union{Colon,AbstractRange},
+                       z::Union{Colon,AbstractRange}, rest...) where {T,N}
+  ret = TransformedArray(img.data[c,x,y,z,rest...],
+                         img.spacing, img.offset, img.rot) # what to do with rot?
+  ret
+end
+
+#=
 function Base.getindex(img::TransformedArray{T,3}, x::Integer, y::Union{Colon,AbstractRange},
                        z::Union{Colon,AbstractRange}, rest...) where {T}
   ret = TransformedArray(img.data[x,y,z,rest...],
-                         img.spacing[2:3], img.offset[2:3], img.rot) # what to do with rot?
+                         img.spacing[2:3], img.offset[2:3], img.rot) 
   ret
 end
 
 function Base.getindex(img::TransformedArray{T,3}, x::Union{Colon,AbstractRange}, y::Integer,
                        z::Union{Colon,AbstractRange}, rest...) where {T}
   ret = TransformedArray(img.data[x,y,z,rest...],
-                         img.spacing[1:2:3], img.offset[1:2:3], img.rot) # what to do with rot?
+                         img.spacing[1:2:3], img.offset[1:2:3], img.rot) 
   ret
 end
 
@@ -112,9 +121,10 @@ function Base.getindex(img::TransformedArray{T,3}, x::Union{Colon,AbstractRange}
                        y::Union{Colon,AbstractRange},
                        z::Integer, rest...) where {T}
   ret = TransformedArray(img.data[x,y,z,rest...],
-                         img.spacing[1:2], img.offset[1:2], img.rot) # what to do with rot?
+                         img.spacing[1:2], img.offset[1:2], img.rot) 
   ret
 end
+=#
 
 
 @inline function Base.setindex!(img::TransformedArray{T,1}, val, i::Int) where T

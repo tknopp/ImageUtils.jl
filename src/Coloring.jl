@@ -40,11 +40,11 @@ function getBounds( data, coloring, minval, maxval)
 end
 
 function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
-                  minval, maxval, params) where {T<:Real}
-  if params[:blendChannels]
+                  minval, maxval, blendChannels, activeChannel) where {T<:Real}
+  if blendChannels
     return colorize(data, coloring, minval, maxval)
   else
-    return colorize(data, coloring, minval, maxval, params[:activeChannel])
+    return colorize(data, coloring, minval, maxval, activeChannel)
   end
 end
 

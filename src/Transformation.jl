@@ -123,71 +123,79 @@ end
 ### interpolateToRefImage ###
 
 
-function interpolateToRefImage(refImage, dynImage; offset=nothing,kargs...)
-  refVoxelSize = collect(converttometer(pixelspacing(refImage)))
-  refSize = [size(refImage)...][1:3]
-  refFov = [size(refImage)...][1:3].*refVoxelSize
-  offset==nothing ? refOffset = collect(converttometer(imcenter(refImage))) : refOffset=offset
+function interpolateToRefImage(refImage::TransformedArray{T,3}, dynImage::TransformedArray{T,3}; offset=nothing,kargs...) where T
 
-  if ndims(dynImage) == 3
-    @debug "interpTorefImage" refVoxelSize refSize refFov refOffset
-    UInterp =  interpolateToGrid(dynImage,refFov,refOffset,refSize; kargs...)
-  else
+  refVoxelSize = collect(pixelspacing(refImage))
+  refSize = collect(size(refImage))[1:3]
+  refFov = collect(size(refImage))[1:3].*refVoxelSize
+  offset==nothing ? refOffset = collect(imcenter(refImage)) : refOffset=offset
 
-    U = zeros(eltype(dynImage),refSize...,size(dynImage,4))
-    for l=1:size(dynImage,4)
-      im = getindex(dynImage,:,:,:,l)
-      U[:,:,:,l] = interpolateToGrid(im,refFov,refOffset,refSize; kargs...)
-    end
+  UInterp = interpolateToGrid(dynImage,refFov,refOffset,refSize; kargs...)
 
-    UInterpAxis = AxisArray(U,AxisArrays.axes(refImage)..., AxisArrays.axes(dynImage)[4])
-    UInterp = copyproperties(dynImage,UInterpAxis) #This is not entirely correct. dynImage has a different pixelspacing
-  end
   return UInterp
 end
 
-function changeCenter(im::ImageMeta, newcenter)
-  newRanges_ = collect(axisvalues(im)[1:3])
-  newRanges = [newRanges_[d] .+ newcenter[d]*u"m" .- imcenter(im)[d] for d=1:3]
+function interpolateToRefImage(refImage::TransformedArray{T,3}, dynImage::TransformedArray{T,4}; offset=nothing,kargs...) where T
+  #refVoxelSize = collect(converttometer(pixelspacing(refImage)))
+  refVoxelSize = collect(pixelspacing(refImage))
+  refSize = [size(refImage)...][1:3]
+  refFov = [size(refImage)...][1:3].*refVoxelSize
+  #offset==nothing ? refOffset = collect(converttometer(imcenter(refImage))) : refOffset=offset
+  offset==nothing ? refOffset = collect(imcenter(refImage)) : refOffset=offset
 
-  if timeaxis(data(im)) == nothing
-    im_ = AxisArray(im.data, Axis{:x}(newRanges[1]), Axis{:y}(newRanges[2]), Axis{:z}(newRanges[3]))
-  else
-    im_ = AxisArray(im.data, Axis{:x}(newRanges[1]), Axis{:y}(newRanges[2]), Axis{:z}(newRanges[3]), timeaxis(im.data))
+  U = zeros(eltype(dynImage),refSize...,size(dynImage,4))
+  for l=1:size(dynImage,4)
+    im = getindex(dynImage,:,:,:,l)
+    U[:,:,:,l] = interpolateToGrid(im,refFov,refOffset,refSize; kargs...)
   end
-  return copyproperties(im,im_)
+
+  UInterpAxis = AxisArray(U,AxisArrays.axes(refImage)..., AxisArrays.axes(dynImage)[4])
+  UInterp = copyproperties(dynImage,UInterpAxis) #This is not entirely correct. dynImage has a different pixelspacing
+
+  return UInterp
 end
 
-function interpolateToRefImage(dataBG, data, params::Dict)
 
-  data_ = Any[]
-  for d in data
-    d_ = changeCenter(d, [params[:transX]+params[:transBGX],
-                    params[:transY]+params[:transBGY],
-                    params[:transZ]+params[:transBGZ]])
+function interpolateToRefImage(dataBG::TransformedArray{T,3}, data::TransformedArray{T,4}, params::Dict) where T
+     
+  data.offset = [data.offset[1]+params[:transX]+params[:transBGX],
+                    data.offset[1]+params[:transY]+params[:transBGY],
+                    data.offset[1]+params[:transZ]+params[:transBGZ]]
 
-    d_["rotation"] = [params[:rotX]+params[:rotBGX],
+  data.rot = [params[:rotX]+params[:rotBGX],
                      params[:rotY]+params[:rotBGY],
                      params[:rotZ]+params[:rotBGZ]]
-    push!(data_,d_)
+
+  out = TransformedArray(zeros(T,size(data,1),size(dataBG,1),
+                         size(dataBG,2), size(dataBG,3)))
+  for c=1:size(out,1)
+    out[c,:,:,:] = interpolateToRefImage(dataBG, data[c,:,:,:], interpDegree=1)
   end
 
-  data_ = [interpolateToRefImage(dataBG,d,interpDegree=1) for d in data_]
-
-  return data_
+  return out
 end
 
 # This version maps the bg on itself
 function interpolateToRefImage(dataBG, params::Dict)
-  dataBG__ = deepcopy(dataBG)
-  dataBG_ = changeCenter(dataBG__, [params[:transBGX], params[:transBGY], params[:transBGZ]])
+  dataBG_ = deepcopy(dataBG)
+  #dataBG_.offset = changeCenter(dataBG__, [params[:transBGX], params[:transBGY], params[:transBGZ]])
+  dataBG_.offset = [dataBG_.offset[1]+params[:transBGX], 
+                    dataBG_.offset[2]+params[:transBGY], 
+                    dataBG_.offset[3]+params[:transBGZ]]
 
-  dataBG_["rotation"] = [params[:rotBGX], params[:rotBGY], params[:rotBGZ]]
+
+  dataBG_.rot = [params[:rotBGX], params[:rotBGY], params[:rotBGZ]]
 
   dataBGInterp = interpolateToRefImage(dataBG, dataBG_, interpDegree=1)
 
   return dataBGInterp
 end
+
+
+
+
+
+
 
 # difficult to dispatch currently
 function interpolateToRefImageAllFr(dataBG, im, params::Dict)
@@ -229,13 +237,17 @@ end
 
 function indexFromBGToFG(refImage, data, params::Dict; offset=nothing)
 
-  image_ = data[1]
+  image = data[1,:,:,:]
 
-  image = changeCenter(image_, [params[:transX]+params[:transBGX],
-                    params[:transY]+params[:transBGY],
-                    params[:transZ]+params[:transBGZ]])
+  #image.offset = changeCenter(image_, [params[:transX]+params[:transBGX],
+  #                  params[:transY]+params[:transBGY],
+  #                  params[:transZ]+params[:transBGZ]])
+                    
+  image.offset = [image.offset[1]+params[:transX]+params[:transBGX],
+                    image.offset[1]+params[:transY]+params[:transBGY],
+                    image.offset[1]+params[:transZ]+params[:transBGZ]]
 
-  image["rotation"] = [params[:rotX]+params[:rotBGX],
+  image.rot = [params[:rotX]+params[:rotBGX],
                      params[:rotY]+params[:rotBGY],
                      params[:rotZ]+params[:rotBGZ]]
 
@@ -250,9 +262,10 @@ function indexFromBGToFG(refImage, data, params::Dict; offset=nothing)
 
   imVoxelSize = collect(pixelspacing(image))
   imSize = [size(image,1),size(image,2),size(image,3)]
+  @show imSize size(imSize) imVoxelSize size(imVoxelSize)
   imFov = imSize.*imVoxelSize
   imOffset = collect(imcenter(image))
-  rotation = get(image, "rotation", [0.0,0.0,0.0])
+  rotation = image.rot #get(image, "rotation", [0.0,0.0,0.0])
 
 
   offsetPixel = (-fovOut./2 + imFov./2 + offsetOut-imOffset)./ imVoxelSize

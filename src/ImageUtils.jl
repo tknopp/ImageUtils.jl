@@ -12,13 +12,13 @@ using Statistics
 using LinearAlgebra
 using Interpolations
 using ImageCore
+using Unitful
 
 @reexport using Colors
 @reexport using FixedPointNumbers
 @reexport using Images
 @reexport using ImageMetadata
 @reexport using ImageAxes
-@reexport using Unitful
 
 include("Arrays.jl")
 include("Coloring.jl")
