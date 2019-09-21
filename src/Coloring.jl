@@ -40,9 +40,16 @@ function getBounds( data, coloring, minval, maxval)
 end
 
 function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
-                  minval, maxval, blendChannels, activeChannel) where {T<:Real}
+                  minval, maxval, blendChannels, activeChannel, complexBlending) where {T<:Real}
   if blendChannels
-    return colorize(data, coloring, minval, maxval)
+    if complexBlending
+      if size(data,1) != 2
+        error("Data needs to be of length 2")
+      end
+      return complexColoring(sliceColorDim(data,1), sliceColorDim(data,2))
+    else
+      return colorize(data, coloring, minval, maxval)
+    end
   else
     return colorize(data, coloring, minval, maxval, activeChannel)
   end
@@ -141,6 +148,14 @@ end
 
 linearDodge(images...) = linearDodge([images...])
 
+function complexColoring(amp, phase)
+  C = similar(amp, RGBA{N0f8})
+  amp ./= maximum(amp)
+  for n=1:length(amp)
+    C[n] = convert(RGBA{N0f8},HSV(360*(phase[n]+pi)/2/pi,1.0,amp[n]))
+  end
+  return C
+end
 
 function overlay(imageBG::AbstractArray{T,D}, imageFG::AbstractArray{U,D},
                   translucentColor) where {T,U,D}

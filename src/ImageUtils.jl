@@ -26,5 +26,7 @@ include("Slicing.jl")
 include("Transformation.jl")
 include("PerfusionMaps.jl")
 include("FileExport.jl")
+include("Permutation.jl")
+include("AnalyzeNifti.jl")
 
 end # module

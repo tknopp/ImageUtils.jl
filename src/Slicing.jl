@@ -5,8 +5,12 @@ export sliceColorDim, sliceTimeDim, sliceSpatialDim, threeSlices,
 
 sliceColorDim(A::AbstractArray{T,3}, proj::Integer) where T = A[proj,:,:]
 sliceColorDim(A::AbstractArray{T,4}, proj::Integer) where T = A[proj,:,:,:]
+sliceColorDim(A::AbstractArray{T,5}, proj::Integer) where T = A[proj,:,:,:,:]
 
 ### sliceTimeDim ###
+
+sliceTimeDim(A::ImageMeta{T,D}, proj::String) where {T,D} =
+  copyproperties(A, sliceTimeDim(A.data, proj))
 
 function sliceTimeDim(A::AbstractArray{T,D}, proj::String) where {T,D}
   if  proj == "MIP"
@@ -91,26 +95,25 @@ function getColoredSlices(data::AbstractArray{T,4}, dataBG, coloring,
   slices = (params[:sliceX],params[:sliceY],params[:sliceZ])
   proj = params[:spatialMIP] ? "MIP" : slices
   
-  return getColoredSlices(data, dataBG, coloring, minval, maxval, proj, params[:blendChannels], params[:activeChannel], params[:coloringBG], get(params,:hideFG, false), get(params,:hideBG, false),
-      get(params,:translucentBlending, false), params[:spatialMIPBG] ? "MIP" : slices)                          
+  return getColoredSlices(data, dataBG, coloring, minval, maxval, proj, params[:blendChannels],
+                          params[:complexBlending], params[:activeChannel], params[:coloringBG], 
+                          get(params,:hideFG, false), get(params,:hideBG, false),
+                          get(params,:translucentBlending, false), 
+                          params[:spatialMIPBG] ? "MIP" : slices)                          
 end
 
 function getColoredSlices(data::AbstractArray{T,4}, dataBG, coloring,
-                          minval, maxval, proj, blendChannels, 
+                          minval, maxval, proj, blendChannels, complexBlending,
                           activeChannels, coloringBG, hideFG, hideBG, 
                           translucentBlending, projBG) where {T}
 
   zx, zy, xy = threeSlices(data, proj)
 
-  #zx = data[:,slices[1],:,:]
-  #zy = data[:,:,slices[2],:]
-  #xy = data[:,:,:,slices[3]]
+  cdata_zx = colorize(zx,coloring,minval,maxval,blendChannels,activeChannels,complexBlending)
+  cdata_zy = colorize(zy,coloring,minval,maxval,blendChannels,activeChannels,complexBlending)
+  cdata_xy = colorize(xy,coloring,minval,maxval,blendChannels,activeChannels,complexBlending)
 
-  cdata_zx = colorize(zx,coloring,minval,maxval,blendChannels,activeChannels)
-  cdata_zy = colorize(zy,coloring,minval,maxval,blendChannels,activeChannels)
-  cdata_xy = colorize(xy,coloring,minval,maxval,blendChannels,activeChannels)
-
-  if !isempty(dataBG)
+  if dataBG != nothing #!isempty(dataBG)
     zxBG, zyBG, xyBG = threeSlices(dataBG, projBG)  #no MIP for BG data!!!
 
     minval,maxval = extrema(dataBG)
