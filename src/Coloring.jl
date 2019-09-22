@@ -40,7 +40,7 @@ function getBounds( data, coloring, minval, maxval)
 end
 
 function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
-                  minval, maxval, blendChannels, activeChannel, complexBlending) where {T<:Real}
+                  minval::Vector, maxval::Vector, blendChannels, activeChannel, complexBlending) where {T<:Real}
   if blendChannels
     if complexBlending
       if size(data,1) != 2
@@ -56,7 +56,7 @@ function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
 end
 
 function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
-                 minval, maxval) where {T<:Real}
+                 minval::Vector, maxval::Vector) where {T<:Real}
   I = [colorize(sliceColorDim(data,i), coloring[i], minval[i], maxval[i]) for i = 1:size(data,1)]
   return linearDodge(I)
 end
