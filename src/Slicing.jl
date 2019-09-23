@@ -164,13 +164,18 @@ end
 function getColoredSlicesMovie(data::ImageMeta{T,5}, dataBG, 
                                coloring, params) where {T}
     
-    xx, yy, zz = getColoredSlicesMovie(data.data, dataBG, coloring, params)
+    xx, yy, zz = _getColoredSlicesMovie(data, dataBG, coloring, params)
 
     return [copyproperties(data, xx), copyproperties(data, yy), copyproperties(data, zz)]
 
 end
 
 function getColoredSlicesMovie(data::AbstractArray{T,5}, dataBG, 
+                               coloring, params) where {T}
+   return _getColoredSlicesMovie(data, dataBG, coloring, params)                            
+end
+
+function _getColoredSlicesMovie(data::AbstractArray{T,5}, dataBG, 
                                coloring, params) where {T}
     L = size(data, 5)
     
