@@ -96,10 +96,11 @@ function getColoredSlices(data::AbstractArray{T,4}, dataBG, coloring,
   proj = params[:spatialMIP] ? "MIP" : slices
   
   return getColoredSlices(data, dataBG, coloring, minval, maxval, proj, params[:blendChannels],
-                          params[:complexBlending], params[:activeChannel], params[:coloringBG], 
+                          params[:complexBlending], params[:activeChannel], 
+                          get(params,:coloringBG,ColoringParams(0,1,"gray")), 
                           get(params,:hideFG, false), get(params,:hideBG, false),
                           get(params,:translucentBlending, false), 
-                          params[:spatialMIPBG] ? "MIP" : slices)                          
+                          get(params,:spatialMIPBG, false) ? "MIP" : slices)                          
 end
 
 function getColoredSlices(data::AbstractArray{T,4}, dataBG, coloring,
@@ -146,7 +147,8 @@ end
 
 export getInterpAndColoredSlices
 
-function getInterpAndColoredSlices(data, dataBG, coloring, minval,maxval, params)
+function getInterpAndColoredSlices(data::AbstractArray{T,4}, dataBG, 
+                                   coloring, minval, maxval, params) where {T}
   if dataBG != nothing
     dataFG = interpolateToRefImage(dataBG, data, params)
     dataBG = interpolateToRefImage(dataBG, params)
@@ -159,32 +161,43 @@ function getInterpAndColoredSlices(data, dataBG, coloring, minval,maxval, params
   return cdata_zx, cdata_zy, cdata_xy
 end
 
-function getColoredSlicesMovie(data, dataBG, coloring, params)
-    L = size(data[1],4)
+function getColoredSlicesMovie(data::ImageMeta{T,5}, dataBG, 
+                               coloring, params) where {T}
+    
+    xx, yy, zz = getColoredSlicesMovie(data.data, dataBG, coloring, params)
 
-    maxval = [maximum(d) for d in data]
-    minval = [minimum(d) for d in data]
+    return [copyproperties(data, xx), copyproperties(data, yy), copyproperties(data, zz)]
 
-    data_ = [getindex(d,:,:,:,1) for d in data]
-    cdata_zx, cdata_zy, cdata_xy = getInterpAndColoredSlices(data_, dataBG, coloring, minval,maxval, params)
+end
 
-    cdata_xy_all = AxisArray(zeros(eltype(cdata_xy),size(cdata_xy,1),size(cdata_xy,2),L),AxisArrays.axes(cdata_xy)..., AxisArrays.axes(data[1])[4])
-    cdata_zx_all = AxisArray(zeros(eltype(cdata_zx),size(cdata_zx,1),size(cdata_zx,2),L),AxisArrays.axes(cdata_zx)..., AxisArrays.axes(data[1])[4])
-    cdata_zy_all = AxisArray(zeros(eltype(cdata_zy),size(cdata_zy,1),size(cdata_zy,2),L),AxisArrays.axes(cdata_zy)..., AxisArrays.axes(data[1])[4])
+function getColoredSlicesMovie(data::AbstractArray{T,5}, dataBG, 
+                               coloring, params) where {T}
+    L = size(data, 5)
+    
+    maxval = [maximum(sliceColorDim(data,d)) for d=1:size(data,Axis{:color})]
+    minval = [minimum(sliceColorDim(data,d)) for d=1:size(data,Axis{:color})]  
 
-    cdata_xy_all[:,:,1] = cdata_xy
-    cdata_zy_all[:,:,1] = cdata_zy
-    cdata_zx_all[:,:,1] = cdata_zx
+    cdata_zx, cdata_zy, cdata_xy = getInterpAndColoredSlices(sliceTimeDim(data,1), dataBG, coloring, minval, maxval, params)
+
+    cdata_xy_all = AxisArray(zeros(eltype(cdata_xy),size(cdata_xy,1),size(cdata_xy,2),L),
+                             AxisArrays.axes(cdata_xy)..., AxisArrays.axes(data)[5])
+                             
+    cdata_zx_all = AxisArray(zeros(eltype(cdata_zx),size(cdata_zx,1),size(cdata_zx,2),L),
+                             AxisArrays.axes(cdata_zx)..., AxisArrays.axes(data)[5])
+
+    cdata_zy_all = AxisArray(zeros(eltype(cdata_zy),size(cdata_zy,1),size(cdata_zy,2),L),
+                             AxisArrays.axes(cdata_zy)..., AxisArrays.axes(data)[5])
+
+    cdata_xy_all[:,:,1] .= cdata_xy
+    cdata_zy_all[:,:,1] .= cdata_zy
+    cdata_zx_all[:,:,1] .= cdata_zx
 
     for l=2:L
-      data_ = [getindex(d,:,:,:,l) for d in data]
+      cdata_zx, cdata_zy, cdata_xy = getInterpAndColoredSlices(sliceTimeDim(data,l), dataBG, coloring, minval, maxval, params)
 
-      cdata_zx, cdata_zy, cdata_xy = getInterpAndColoredSlices(data_, dataBG, coloring, minval, maxval, params)
-
-      cdata_xy_all[:,:,l] = cdata_xy
-      cdata_zy_all[:,:,l] = cdata_zy
-      cdata_zx_all[:,:,l] = cdata_zx
+      cdata_xy_all[:,:,l] .= cdata_xy
+      cdata_zy_all[:,:,l] .= cdata_zy
+      cdata_zx_all[:,:,l] .= cdata_zx
     end
-    return ImageMeta[copyproperties(data[1],cdata_xy_all), copyproperties(data[1],cdata_zx_all), copyproperties(data[1],cdata_zy_all)]
-
+    return [cdata_xy_all, cdata_zx_all, cdata_zy_all]
 end

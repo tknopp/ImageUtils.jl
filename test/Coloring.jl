@@ -26,6 +26,12 @@ Itemp = randn(30,30,100)
 exportMovie("img/movie.gif", Itemp, vmin=0.0, vmax=1.0, colormap="viridis", normalize=true)
 @testImg("movie.gif")
 
+
+Itemp = randn(30,30,100)
+exportMovies("img/movie.gif", [Itemp,Itemp,Itemp])
+@testImg("movie.gif")
+
+
 # Overlay
 
 O = zeros(N,N)

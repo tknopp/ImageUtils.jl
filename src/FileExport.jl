@@ -34,29 +34,29 @@ end
 
 ### export movies ###
 
-exportMovie(filename, im::ImageMeta; kargs...) = exportMovie(filename, im.data; kargs...)
+exportMovie(filename, data::ImageMeta; kargs...) = exportMovie(filename, data.data; kargs...)
 
-function exportMovie(filename, im::AbstractArray{T,3}; vmin=0.0, vmax=1.0,
+function exportMovie(filename, data::AbstractArray{T,3}; vmin=0.0, vmax=1.0,
                               colormap="gray", normalize=true, kargs...) where {T<:Real}
-  imC = colorize( im, vmin, vmax, cmap(colormap), normalize=normalize )
+  imC = colorize( data, vmin, vmax, cmap(colormap), normalize=normalize )
   exportMovie(filename, imC; kargs...)
 end
 
-function exportMovie(filename, im::AbstractArray{T,3}; pixelResizeFactor=1) where {T<:Colorant}
+function exportMovie(filename, data::AbstractArray{T,3}; pixelResizeFactor=1) where {T<:Colorant}
   file, ext = splitext(filename)
   filename_ = file*".gif"
 
   if pixelResizeFactor > 1
-    data = repeat(data,inner=[pixelResizeFactor,pixelResizeFactor,1])
+    data = repeat(data, inner=[pixelResizeFactor,pixelResizeFactor,1])
   end
 
-  minPxSpacing = minimum(pixelspacing(im))
-  newSize = ceil.(Int64, collect(pixelspacing(im)[1:2]) / minPxSpacing .* collect(size(im)[1:2]) )
+  minPxSpacing = minimum(pixelspacing(data))
+  newSize = ceil.(Int64, collect(pixelspacing(data)[1:2]) / minPxSpacing .* collect(size(data)[1:2]) )
 
-  datai = similar(im,(newSize[1],newSize[2],size(im,3)))
+  datai = similar(data, (newSize[1],newSize[2],size(data,3)))
 
-  for l=1:size(im,3)
-    datai[:,:,l] = Images.imresize(im[:,:,l],(newSize[1],newSize[2]))
+  for l=1:size(data,3)
+    datai[:,:,l] = Images.imresize(data[:,:,l],(newSize[1],newSize[2]))
   end
 
   rgbdata = convert(Array{RGB},datai)
@@ -68,6 +68,7 @@ end
 
 function exportMovies(filename, data::Vector; kargs...)
   file, ext = splitext(filename)
+  
   exportMovie(file*"_xy.gif", data[1]; kargs...)
   exportMovie(file*"_xz.gif", data[2]; kargs...)
   exportMovie(file*"_yz.gif", data[3]; kargs...)

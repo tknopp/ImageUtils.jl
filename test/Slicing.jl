@@ -38,13 +38,20 @@ I = ones(1,3,3,3,3)
 IA = makeAxisArray(I, [1.0,1.0,1.0]./256, -[0.5,0.5,0.0].+[1.0,1.0,0.0]./256, 1.0 )
 IAL = sliceTimeDim(IA, 3)
 
-#params = Dict{Symbol,Any}()
-#params[:sliceX] = 1
-#params[:sliceY] = 1
-#params[:sliceZ] = 1
-#params[:spatialMIP] = true
-#params[:blendChannels] = true
-#getColoredSlices(ITL, nothing, nothing, [ColoringParams(0,1,"gray")], [0.0], [1.0], params)
+params = Dict{Symbol,Any}()
+params[:sliceX] = 1
+params[:sliceY] = 1
+params[:sliceZ] = 1
+params[:spatialMIP] = true
+params[:blendChannels] = true
+params[:complexBlending] = false
+params[:activeChannel] = 1
 
+xx,yy,zz = getColoredSlices(IAL, nothing, [ColoringParams(0,1,"gray")], [0.0], [1.0], params)
+@show typeof(xx)
+
+
+xx,yy,zz = getColoredSlicesMovie(IA, nothing, [ColoringParams(0,1,"gray")], params)
+@show typeof(xx)
 
 end
