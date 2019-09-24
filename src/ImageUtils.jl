@@ -1,7 +1,7 @@
 module ImageUtils
 
-using Reexport
 using ImageMagick
+using Reexport
 #using FileIO
 #import FileIO.save
 using ColorVectorSpace
