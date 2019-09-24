@@ -44,7 +44,6 @@ end
 
 function exportMovie(filename, data::AbstractArray{T,3}; pixelResizeFactor=1) where {T<:Colorant}
   file, ext = splitext(filename)
-  filename_ = file*".gif"
 
   if pixelResizeFactor > 1
     data = repeat(data, inner=[pixelResizeFactor,pixelResizeFactor,1])
@@ -62,13 +61,13 @@ function exportMovie(filename, data::AbstractArray{T,3}; pixelResizeFactor=1) wh
   rgbdata = convert(Array{RGB},datai)
   rgbdata = reverse(rgbdata,dims=1)
   @debug "saving $filename"
-  ImageMagick.save(filename, rgbdata)
+  ImageMagick.save(file*".gif", rgbdata)
 end
 
 
 function exportMovies(filename, data::Vector; kargs...)
   file, ext = splitext(filename)
-  
+
   exportMovie(file*"_xy.gif", data[1]; kargs...)
   exportMovie(file*"_xz.gif", data[2]; kargs...)
   exportMovie(file*"_yz.gif", data[3]; kargs...)
