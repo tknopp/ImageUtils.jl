@@ -96,7 +96,7 @@ function CBV(tseries; positionArtery=[1,1,1], alpha = 0.4, alpha2=0.4,windowsize
   mask = generateMaskFromMIP(tseries[:,:,:,:],alpha, alpha2)   
   tseries = lowpasshann(tseries,windowsize=windowsize)
   dimension = length(size(tseries))	
-  return sum(tseries,dims=dimension)/sum(squeeze(tseries[positionArtery[1],positionArtery[2],positionArtery[3],:])).*mask
+  return sum(tseries,dims=dimension)/sum(vec(tseries[positionArtery[1],positionArtery[2],positionArtery[3],:])).*mask
 end
 
 """
@@ -181,7 +181,7 @@ function TTP(tseries::Array; alpha=0.4,alpha2=0.4,windowsize=12,DFPeriodInS=0.02
    for ib = 1:px
      for jb = 1:py
        for kb = 1:pz
-         buf = squeeze(ldata[ib,jb,kb,:])
+         buf = vec(ldata[ib,jb,kb,:])
          (maxdat[ib,jb,kb,1],ttp[ib,jb,kb,1])=findmax(buf)
        end
      end
@@ -224,7 +224,7 @@ function maximumGradient(data)
   for ib = 1:px
     for jb = 1:py
       for kb = 1:pz
-        buf = squeeze(tempdiff[ib,jb,kb,:])
+        buf = vec(tempdiff[ib,jb,kb,:])
         (maxgrad[ib,jb,kb,1],tmaxgrad[ib,jb,kb,1])=findmax(buf)
       end
     end
