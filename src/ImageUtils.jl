@@ -13,6 +13,7 @@ using LinearAlgebra
 using Interpolations
 using ImageCore
 using Unitful
+using FFTW
 
 @reexport using Colors
 @reexport using FixedPointNumbers
