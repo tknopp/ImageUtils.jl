@@ -143,7 +143,7 @@ function linearDodge(images::Vector)
 	for imag in images
 		out .+= imag
 	end
-	return Images.clamp01!(out)
+	return clamp01!(out)
 end
 
 linearDodge(images...) = linearDodge([images...])
