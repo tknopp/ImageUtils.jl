@@ -20,7 +20,6 @@ function exportImage(filename, im::AbstractMatrix{T}; pixelResizeFactor=1) where
 
   dataResized = Images.imresize(im,(newSize[1],newSize[2]))
   rgbdata = convert(Array{RGB},dataResized)
-  rgbdata = reverse(rgbdata,dims=1)
   ImageMagick.save(filename, rgbdata)
 end
 
@@ -59,7 +58,6 @@ function exportMovie(filename, data::AbstractArray{T,3}; pixelResizeFactor=1) wh
   end
 
   rgbdata = convert(Array{RGB},datai)
-  rgbdata = reverse(rgbdata,dims=1)
   @debug "saving $filename"
   ImageMagick.save(file*".gif", rgbdata)
 end
