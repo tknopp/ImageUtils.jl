@@ -11,14 +11,12 @@ end
 function exportImage(filename, im::AbstractMatrix{T}; pixelResizeFactor=1) where {T<:Colorant}
   file, ext = splitext(filename)
 
-  if pixelResizeFactor > 1
-    im = repeat(im, inner=[pixelResizeFactor,pixelResizeFactor])
-  end
+  imR = repeat(im, inner=[pixelResizeFactor,pixelResizeFactor])
 
   minPxSpacing = minimum(pixelspacing(im))
-  newSize = ceil.(Int64, collect(pixelspacing(im)) / minPxSpacing .* collect(size(im)) )
+  newSize = ceil.(Int64, collect(pixelspacing(im)) / minPxSpacing .* collect(size(imR)) )
 
-  dataResized = Images.imresize(im,(newSize[1],newSize[2]))
+  dataResized = Images.imresize(imR,(newSize[1],newSize[2]))
   rgbdata = convert(Array{RGB},dataResized)
   ImageMagick.save(filename, rgbdata)
 end
