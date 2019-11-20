@@ -1,6 +1,5 @@
 using ImageUtils
 using Test
-#using FileIO
 using Random
 using ImageMagick
 
