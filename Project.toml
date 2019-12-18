@@ -1,7 +1,7 @@
 name = "ImageUtils"
 uuid = "8ad4436d-4835-5a14-8bce-3ae014d2950b"
 authors = ["Tobias Knopp <tobias@knoppweb.de>"]
-version = "0.2"
+version = "0.2.1"
 
 [deps]
 AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
@@ -23,7 +23,7 @@ julia = "0.7, 1.0"
 AxisArrays = "0.3"
 FFTW = "0.2, 1.0"
 FixedPointNumbers = "0.6"
-ImageMagick = "0.7"
+ImageMagick = "1.1"
 Images = "0.18"
 Interpolations = "0.12"
 ColorVectorSpace = "0.7"
