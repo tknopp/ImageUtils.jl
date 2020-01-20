@@ -92,9 +92,11 @@ end
 
 function getColoredSlices(data::AbstractArray{T,4}, dataBG, coloring,
                           minval, maxval, params) where {T}
-  slices = (params[:sliceX],params[:sliceY],params[:sliceZ])
+  slices = (min(params[:sliceX], size(data,2)),
+	    min(params[:sliceY], size(data,3)),
+	    min(params[:sliceZ], size(data,4)))
   proj = params[:spatialMIP] ? "MIP" : slices
-  
+ 
   return getColoredSlices(data, dataBG, coloring, minval, maxval, proj, params[:blendChannels],
                           params[:complexBlending], params[:activeChannel], 
                           get(params,:coloringBG,ColoringParams(0,1,"gray")), 
