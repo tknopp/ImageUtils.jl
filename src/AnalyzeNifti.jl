@@ -44,12 +44,13 @@ function savedata_analyze(filename::AbstractString, im::ImageMeta; verbose = fal
     c = data(im)
     im["cmin"] = minimum(c)
     im["cmax"] = maximum(c)
-    im["scalingFactor"] = 2^14 / maximum(c)
-    c *= im["scalingFactor"]
     if saveas16bit
+        im["scalingFactor"] = 2^14 / maximum(c)
+        c *= im["scalingFactor"]
         c = round(Int16,c)
         im["datatype"] = ElementType.INT16
     else
+        im["scalingFactor"] = 1
         if eltype(c) != Float32
           #c = map(Float32,c) #this does not work for franzi
           c = AxisArray(map(f, c.data), c.axes...)
@@ -146,8 +147,8 @@ function loaddata_analyze(filename::AbstractString)
   pixspacing = header["pixelspacing"]*1000u"mm"
   offset = header["offset"]*1000u"mm" .- 0.5.*pixspacing.*header["size"][1:3] .+ 0.5.*pixspacing
   if ndims(c) == 4
-    im = AxisArray(c, (:x,:y,:z,:time), tuple(pixspacing...,one(typeof(header["pixelspacing"][1])*u"s")),
-                                   tuple(offset..., zero(typeof(offset[1]))*u"s"))
+    im = AxisArray(c, (:x,:y,:z,:time), tuple(pixspacing...,one(typeof(header["pixelspacing"][1]))*u"s"),
+                                   tuple(offset..., zero(typeof(header["offset"][1]))*u"s"))
   else
     im = AxisArray(c, (:x,:y,:z), tuple(pixspacing...), tuple(offset... ))
   end
