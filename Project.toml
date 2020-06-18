@@ -20,15 +20,15 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 AxisArrays = "0.3, 0.4"
-ColorVectorSpace = "0.7"
-Colors = "0.9"
+ColorVectorSpace = "0.7, 0.8"
+Colors = "0.9, 0.12"
 FFTW = "0.2, 1.0"
-FixedPointNumbers = "0.6"
+FixedPointNumbers = "0.6, 0.8"
 ImageMagick = "0.7, 1.1"
-Images = "0.18"
+Images = "0.18, 0.22"
 Interpolations = "0.12"
 Reexport = "0.2"
-Unitful = "0.17"
+Unitful = "0.17, 1.2"
 julia = "0.7, 1.0"
 
 [extras]
