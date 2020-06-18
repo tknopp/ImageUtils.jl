@@ -28,7 +28,7 @@ ImageMagick = "0.7, 1.1"
 Images = "0.18, 0.22"
 Interpolations = "0.12"
 Reexport = "0.2"
-Unitful = "0.17"
+Unitful = "0.17, 1.2"
 julia = "0.7, 1.0"
 
 [extras]
