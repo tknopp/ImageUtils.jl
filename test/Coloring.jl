@@ -22,14 +22,14 @@ exportImage("img/coloring3.png", I, vmin=0.0, vmax=0.5, colormap="blue", normali
 
 # Movie
 
-Itemp = randn(30,30,100)
+Itemp = Array(reshape(range(0,1,length=90000),30,30,100))
 exportMovie("img/movie.gif", Itemp, vmin=0.0, vmax=1.0, colormap="viridis", normalize=true)
 @testImg("movie.gif")
 
-
-Itemp = randn(30,30,100)
 exportMovies("img/movie.gif", [Itemp,Itemp,Itemp])
-@testImg("movie.gif")
+@testImg("movie_xy.gif")
+@testImg("movie_xz.gif")
+@testImg("movie_yz.gif")
 
 
 # Overlay
