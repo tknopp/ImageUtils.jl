@@ -14,7 +14,7 @@ IInterp2 = interpolateToGrid(IA, [0.0,0.0,1.0], [2.0,2.0,2.0], [0.4,0.4,0.0], [4
 exportImage("img/trafo2.png", IInterp2[:,:,1])
 @testImg("trafo2.png")
 
-IM = ImageMeta(IA, Dict{String,Any}("rotation"=>[0.0,0.0,1.0]))
+IM = ImageMeta(IA, Dict{Symbol,Any}(:rotation=>[0.0,0.0,1.0]))
 IInterp3 = interpolateToGrid(IM, [2.0,2.0,2.0], [0.4,0.4,0.0], [400,400,1])
 exportImage("img/trafo3.png", IInterp3[:,:,1])
 @testImg("trafo3.png")

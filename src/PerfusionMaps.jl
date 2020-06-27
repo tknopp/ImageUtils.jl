@@ -22,7 +22,7 @@ function lowpasshann(tseries::Array;windowsize=12)
   (px,py,pz,pt) = size(tseries)
 
   hant=zeros(1,1,1,pt)
-  
+
   hant[1,1,1,round(Int,pt/2)-round(Int,round(Int,windowsize))+1:round(Int,pt/2)]=hann(round(Int,round(Int,windowsize)))
   hant[1,1,1,round(Int,pt/2)+1:round(Int,pt/2)+round(Int,round(Int,windowsize))]=hann(round(Int,round(Int,windowsize)))
   hant[1,1,1,round(Int,pt/2)-round(Int,round(Int,windowsize/2))+1:round(Int,pt/2)+round(Int,round(Int,windowsize/2))]=ones(round(Int,round(Int,windowsize)),1)
@@ -35,7 +35,7 @@ function lowpasshann(tseries::Array;windowsize=12)
 end
 
 function lowpasshann(tseries::ImageMeta;windowsize=12)
-  odata = data(tseries)
+  odata = arraydata(tseries)
   return lowpasshann(odata,windowsize=12)
 end
 
@@ -73,14 +73,14 @@ Calculates the maximum gradient pixelwise along temporal dimension for pixels in
 function CBF_maxgrad(tseries::Array;positionArtery=[1,1,1], alpha=0.4, alpha2=2,windowsize=6)
   mask = generateMaskFromMIP(tseries[:,:,:,:],alpha, alpha2)
   tmaxgrad, maxgrad = maximumGradient(tseries, mask)
-  
+
   tseries = lowpasshann(tseries,windowsize=windowsize)
   println(positionArtery)
   CBF = zeros(size(maxgrad))
-  
+
   for i in CartesianIndices(maxgrad)
     if (mask[i]>0)
-      CBF[i] = maxgrad[i]/maximum(tseries[positionArtery[1],positionArtery[2],positionArtery[3],:])	     
+      CBF[i] = maxgrad[i]/maximum(tseries[positionArtery[1],positionArtery[2],positionArtery[3],:])
     else
       CBF[i] = 0
     end
@@ -93,9 +93,9 @@ end
 Calculates the pixelwise sum along the temporal dimension and normalizes to sum at position of artery
 """
 function CBV(tseries; positionArtery=[1,1,1], alpha = 0.4, alpha2=0.4,windowsize=12)
-  mask = generateMaskFromMIP(tseries[:,:,:,:],alpha, alpha2)   
+  mask = generateMaskFromMIP(tseries[:,:,:,:],alpha, alpha2)
   tseries = lowpasshann(tseries,windowsize=windowsize)
-  dimension = length(size(tseries))	
+  dimension = length(size(tseries))
   return sum(tseries,dims=dimension)/sum(vec(tseries[positionArtery[1],positionArtery[2],positionArtery[3],:])).*mask
 end
 
@@ -115,7 +115,7 @@ function firstMoment(tseries::Array)
        end
      end
    end
-  
+
   return firstMom
 end
 """
@@ -123,13 +123,13 @@ end
 Not all pixels in the DF FoV experience signal uptake. Mask covers only regions with signal increase during time
 """
 function generateMaskFromMIP(tseries,alpha,alpha2;windowsize=12)
-  tseries = lowpasshann(tseries,windowsize=windowsize)	
+  tseries = lowpasshann(tseries,windowsize=windowsize)
   dataMIP = maximum(tseries,dims=4)
   mask = zeros(size(dataMIP))
   mask2 = zeros(size(dataMIP))
   mask2[dataMIP .> maximum(dataMIP)*alpha2] .= 1
   mask[dataMIP .> mean(tseries[:,:,:,1:5],dims=4)*alpha ] .= 1
- 
+
   return mask.*mask2
 end
 """
@@ -137,7 +137,7 @@ end
 Calculates the mean transit time pixelwise from the first moment MTT =(sum(c(t)*t))/sum(c(t)) along the temporal dimension(4)
 """
 function MTT(tseries::ImageMeta; alpha = 0.4, alpha2 =0.4,DFPeriodInS=0.02154)
-  return MTT(tseries.data; alpha = alpha, alpha2 =alpha2,DFPeriodInS=0.02154)  
+  return MTT(tseries.data; alpha = alpha, alpha2 =alpha2,DFPeriodInS=0.02154)
 end
 """
     MTT(tseries::Array[; alpha = 0.4, alpha2 =0.4])
@@ -145,7 +145,7 @@ Calculates the mean transit time pixelwise from the first moment MTT =(sum(c(t)*
 """
 function MTT(tseries::Array; alpha = 0.4, alpha2 =0.4,DFPeriodInS=0.02154)
 
-  mask = generateMaskFromMIP(tseries,alpha, alpha2)	
+  mask = generateMaskFromMIP(tseries,alpha, alpha2)
   firstMom = firstMoment(tseries)
   IntegratedConcentration = sum(tseries,dims=4)
   mtt = firstMom.*mask./IntegratedConcentration
@@ -186,7 +186,7 @@ function TTP(tseries::Array; alpha=0.4,alpha2=0.4,windowsize=12,DFPeriodInS=0.02
        end
      end
    end
-  mask=generateMaskFromMIP(tseries[:,:,:,:],alpha,alpha2) 
+  mask=generateMaskFromMIP(tseries[:,:,:,:],alpha,alpha2)
   dataFG = float(ttp).*mask
   return dataFG.*DFPeriodInS
 
@@ -198,7 +198,7 @@ function findFirstEntrySmallerThreshHigherInt(tseries,thresh,minInt)
   positionInArray = findmax(comparison)[2]
   if (findmax(comparison)[1] == 0)
     positionInArray = length(tseries)
-  end 
+  end
   return positionInArray
 end
 
@@ -209,11 +209,11 @@ end
 
 function maximumGradient(data)
   ldata = lowpasshann(data,windowsize=6)
-  
+
   (px,py,pz,pt) = size(data)
   normfactors = mean(ldata[:,:,:,:],dims=4)
   normdata = broadcast(-,ldata,normfactors)
-  
+
   tempdiff = zeros(size(normdata)[1],size(normdata)[2],size(normdata)[3],size(normdata)[4]-1)
   for i = 1:size(tempdiff)[4]
     tempdiff[:,:,:,i] = normdata[:,:,:,i+1]-normdata[:,:,:,i]
@@ -240,28 +240,28 @@ Determines the beginning of the bolus (bolust1) as the time of maximum derivativ
 function findBeginningEndingBolus(tseries;alpha=0.4, alpha2=0.4)
 
   ldata = lowpasshann(tseries,windowsize=6)
-  
+
   (px,py,pz,pt) = size(tseries)
   normfactors = mean(ldata[:,:,:,:],dims=4)
   normdata = broadcast(-,ldata,normfactors)
   mask = generateMaskFromMIP(tseries[:,:,:,:],alpha,alpha2)
   maxgrad,tmaxgrad=maximumGradient(tseries)
-  
- 
+
+
   bolust1=minimum(tmaxgrad.*mask+(1 .-mask).*maximum(tmaxgrad))
 
   tBolusEnd = zeros(px,py,pz,1)
-   
+
   for ib = 1:px
     for jb = 1:py
       for kb = 1:pz
         concentrationthresh = normdata[ib,jb,kb,Int(tmaxgrad[ib,jb,kb,1])]
-        tBolusEnd[ib,jb,kb,1] = findFirstEntrySmallerThreshHigherInt(normdata[ib,jb,kb,:],concentrationthresh,Int(tmaxgrad[ib,jb,kb,1]))        
+        tBolusEnd[ib,jb,kb,1] = findFirstEntrySmallerThreshHigherInt(normdata[ib,jb,kb,:],concentrationthresh,Int(tmaxgrad[ib,jb,kb,1]))
       end
     end
   end
   bolust2=maximum(tBolusEnd.*mask)
-   
+
   return bolust1,bolust2
 
 end
@@ -297,6 +297,6 @@ function CBF(tseries; positionArtery=[1,1,1], alpha = 0.4, alpha2=0.4,windowsize
   cbf =zeros(size(cbv))
   mask = generateMaskFromMIP(tseries[:,:,:,:],alpha,alpha2)
   cbf = cbv.*mask./(mtt.*mask+(1 .-mask))
-  
+
   return cbf
 end

@@ -7,7 +7,7 @@ export interpolateToGrid, interpolateToCommonGrid, interpolateToRefImage,
 function interpolateToGrid(image::ImageMeta{T,3}, fovOut::Vector{Float64},
                 offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...) where T
 
-  rot = get(image, "rotation", [0.0,0.0,0.0])
+  rot = get(image, :rotation, [0.0,0.0,0.0])
   imOutAxis = interpolateToGrid(image.data, rot, fovOut, offsetOut, gridSizeOut)
   return copyproperties(image, imOutAxis)
 end
@@ -145,7 +145,7 @@ function interpolateToRefImage(refImage, dynImage::ImageMeta{T,4}; offset=nothin
     end
 
     UInterpAxis = AxisArray(U,AxisArrays.axes(dynImage)[1], AxisArrays.axes(refImage)...)
-    UInterp = copyproperties(dynImage,UInterpAxis) #This is not entirely correct. dynImage has a different pixelspacing  
+    UInterp = copyproperties(dynImage,UInterpAxis) #This is not entirely correct. dynImage has a different pixelspacing
   else
     refVoxelSize = collect(converttometer(pixelspacing(refImage)))
     refSize = collect(size(refImage))[1:3]
@@ -200,7 +200,7 @@ function changeCenter(im::ImageMeta{T,4}, newcenter) where T
     newRanges_ = collect(axisvalues(im)[1:3])
     newRanges = [newRanges_[d] .+ newcenter[d]*u"m" .- imcenter(im)[d] for d=1:3]
 
-    im_ = AxisArray(im.data, Axis{:x}(newRanges[1]), Axis{:y}(newRanges[2]), Axis{:z}(newRanges[3]), timeaxis(im.data))  
+    im_ = AxisArray(im.data, Axis{:x}(newRanges[1]), Axis{:y}(newRanges[2]), Axis{:z}(newRanges[3]), timeaxis(im.data))
   end
   return copyproperties(im,im_)
 end

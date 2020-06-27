@@ -23,7 +23,7 @@ function applyPermutions(im, mode)
 
   im_ = permutedims(im,perm)
   for i in flip
-    im_ = copyproperties(im, reverse(data(im_),dims=i))
+    im_ = copyproperties(im, reverse(arraydata(im_),dims=i))
   end
   return im_
 end
@@ -32,7 +32,7 @@ function applyPermutionsRev(im, mode)
   perm, flip = convertMode2PermFlip(mode)
   im_ = im
   for i in flip
-    im_ = copyproperties(im,reverse(data(im_),dims=i))
+    im_ = copyproperties(im,reverse(arraydata(im_),dims=i))
   end
   im_ = permutedims(im_,perm)
   return im_
@@ -41,7 +41,7 @@ end
 function applyPermutions(im, perm, flip)
   im_ = permutedims(im,perm)
   for i in flip
-    im_ = copyproperties(im, reverse(data(im_),dims=i))
+    im_ = copyproperties(im, reverse(arraydata(im_),dims=i))
   end
   return im_
 end
@@ -49,7 +49,7 @@ end
 function applyPermutionsRev(im, perm, flip)
   im_ = im
   for i in flip
-    im_ = copyproperties(im,reverse(data(im_),dims=i))
+    im_ = copyproperties(im,reverse(arraydata(im_),dims=i))
   end
   im_ = permutedims(im_,perm)
   return im_
