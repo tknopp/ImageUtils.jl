@@ -57,9 +57,9 @@ end
 function sliceSpatialDim(A::AbstractArray{T,D}, proj::String, dim::Integer) where {T,D}
   d = (D == 4) ? dim + 1 : dim
   if proj == "MIP"
-    return dropdims(maximum(A, dims=d),dims=d)
+    return AbstractArray{T,D-1}(dropdims(maximum(A, dims=d),dims=d))
   elseif proj == "SUM"
-    return dropdims(sum(A, d),dims=d)
+    return AbstractArray{T,D-1}(dropdims(sum(A, d),dims=d))
   else
     error("proj=$proj not available!")
   end
