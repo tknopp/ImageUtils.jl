@@ -2,6 +2,7 @@ using ImageUtils
 using Test
 using Random
 using ImageMagick
+using TestImages
 
 mkpath("img/")
 mkpath("correct/")

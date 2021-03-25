@@ -1,6 +1,6 @@
 export exportImage, exportMovie, exportMovies
 
-exportImage(filename, im::ImageMeta; kargs...) = exportImage(filename, im.data; kargs...)
+exportImage(filename, im::ImageMeta; kargs...) = exportImage(filename, arraydata(im); kargs...)
 
 function exportImage(filename, im::AbstractMatrix{T}; vmin=0.0, vmax=1.0,
                               colormap="gray", normalize=true, kargs...) where {T<:Real}
@@ -17,7 +17,7 @@ function exportImage(filename, im::AbstractMatrix{T}; pixelResizeFactor=1) where
   newSize = ceil.(Int64, collect(pixelspacing(im)) / minPxSpacing .* collect(size(imR)) )
 
   dataResized = Images.imresize(imR,(newSize[1],newSize[2]))
-  rgbdata = convert(Array{RGB},dataResized)
+  rgbdata = RGB.(dataResized)
   ImageMagick.save(filename, rgbdata)
 end
 
@@ -55,7 +55,7 @@ function exportMovie(filename, data::AbstractArray{T,3}; pixelResizeFactor=1) wh
     datai[:,:,l] = Images.imresize(data[:,:,l],(newSize[1],newSize[2]))
   end
 
-  rgbdata = convert(Array{RGB},datai)
+  rgbdata = RGB.(datai)
   @debug "saving $filename"
   ImageMagick.save(file*".gif", rgbdata)
 end

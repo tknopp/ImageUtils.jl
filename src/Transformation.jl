@@ -8,7 +8,7 @@ function interpolateToGrid(image::ImageMeta{T,3}, fovOut::Vector{Float64},
                 offsetOut::Vector{Float64}, gridSizeOut::Vector{Int64}; kargs...) where T
 
   rot = get(image, :rotation, [0.0,0.0,0.0])
-  imOutAxis = interpolateToGrid(image.data, rot, fovOut, offsetOut, gridSizeOut)
+  imOutAxis = interpolateToGrid(arraydata(image), rot, fovOut, offsetOut, gridSizeOut)
   return copyproperties(image, imOutAxis)
 end
 
