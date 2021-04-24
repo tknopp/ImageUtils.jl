@@ -5,7 +5,7 @@
 Random.seed!(1)
 
 N = 64
-I = Float64.(TestImages.shepp_logan(N))
+I = shepp_logan(N)
 
 IC = colorize(I, ColoringParams(0,1,"gray"), 0.0, 1.0)
 @test typeof(IC) == Array{RGBA{Normed{UInt8,8}},2}
@@ -49,7 +49,7 @@ exportImage("img/coloring5.png", over)
 @testImg("coloring5.png")
 
 
-I = reshape(Float64.(TestImages.shepp_logan(N)),1,N,N)
+I = reshape(shepp_logan(N),1,N,N)
 O = reshape(O,1,N,N)
 I = cat(I,O,dims=1)
 
