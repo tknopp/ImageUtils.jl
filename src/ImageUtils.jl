@@ -1,21 +1,24 @@
 module ImageUtils
 
-using ImageMagick
-using Reexport
-using ColorVectorSpace
 using AxisArrays
-const axes = Base.axes
-using Random
-using Statistics
-using LinearAlgebra
-using Interpolations
-using Unitful
+using ColorSchemes
+using ColorVectorSpace
 using FFTW
-import TestImages
+using ImageMagick
+using Interpolations
+using LinearAlgebra
+using Random
+using Reexport
+using Roots
+using Statistics
+using TestImages
+using Unitful
 
 @reexport using Colors
 @reexport using FixedPointNumbers
 @reexport using Images
+
+const axes = Base.axes
 
 export shepp_logan
 

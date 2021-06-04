@@ -148,13 +148,15 @@ end
 
 linearDodge(images...) = linearDodge([images...])
 
-function complexColoring(amp, phase)
-  C = similar(amp, RGBA{N0f8})
-  amp ./= maximum(amp)
-  for n=1:length(amp)
-    C[n] = convert(RGBA{N0f8},HSV(360*(phase[n]+pi)/2/pi,1.0,amp[n]))
-  end
-  return C
+complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=mean(map(c-> Gray(c).val,colormap))) where T<:Complex = complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g)
+
+function complexColoring(amp, phase; colormap=ColorSchemes.phase, normalizeG::Bool=true, g=mean(map(c-> Gray(c).val,colormap)))
+    if normalizeG
+        colormap = ColorScheme(normalizeGray.(colormap,g))
+    end
+	I = amp./maximum(amp)
+	rawImage = I.*get(colormap,phase,(-π,Float64(π)))
+    return convert.(RGBA{N0f8},rawImage)
 end
 
 function overlay(imageBG::AbstractArray{T,D}, imageFG::AbstractArray{U,D},
@@ -268,10 +270,22 @@ end
 ##################
 
 """
+    `normalizeGray(colormap,g=0.45)`
+
+Transform a color lightness value in Lab space with the aim to output a color
+of similar color but with the specified gray value.
+"""
+function normalizeGray(c::T,g=0.5) where {T<:Colorant}
+    cluv = Lab(c)
+    l = find_zero(l->Gray.(Lab(l,cluv.a,cluv.b)).val-g, (0, 100))
+    return T(Lab(l,cluv.a,cluv.b))
+end
+
+"""
     cmap(color)
 
 Creates a colormap from a single `color`, with a color gradient from
-transparent balck to the opaque `color`.
+transparent black to the opaque `color`.
 """
 function cmap(color::T) where {T<:Colorant}
 	c1 = RGBA{N0f8}(0,0,0,0)
