@@ -148,14 +148,16 @@ end
 
 linearDodge(images...) = linearDodge([images...])
 
-complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=mean(map(c-> Gray(c).val,colormap))) where T<:Complex = complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g)
+complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=mean(map(c-> Gray(c).val,colormap)), amax=maximum(abs.(C))) where T<:Complex = complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g, amax=amax)
 
-function complexColoring(amp, phase; colormap=ColorSchemes.phase, normalizeG::Bool=true, g=mean(map(c-> Gray(c).val,colormap)))
+function complexColoring(amp, phase; colormap=ColorSchemes.phase, normalizeG::Bool=true, g=mean(map(c-> Gray(c).val,colormap)), amax=maximum(amp))
     if normalizeG
         colormap = ColorScheme(normalizeGray.(colormap,g))
     end
-	I = amp./maximum(amp)
-	rawImage = I.*get(colormap,phase,(-π,Float64(π)))
+    # normalize amplitude
+    I = amp./amax
+    clamp01!(I) # using desaturation colormap: make sure to map intensity between 0 and 1
+    rawImage = I.*get(colormap,phase,(-π,Float64(π)))
     return convert.(RGBA{N0f8},rawImage)
 end
 
