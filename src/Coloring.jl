@@ -148,9 +148,9 @@ end
 
 linearDodge(images...) = linearDodge([images...])
 
-complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=mean(map(c-> Gray(c).val,colormap)), amax=maximum(abs.(C))) where T<:Complex = complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g, amax=amax)
+complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=0.7, amax=maximum(abs.(C))) where T<:Complex = complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g, amax=amax)
 
-function complexColoring(amp, phase; colormap=ColorSchemes.phase, normalizeG::Bool=true, g=mean(map(c-> Gray(c).val,colormap)), amax=maximum(amp))
+function complexColoring(amp, phase; colormap=ColorSchemes.phase, normalizeG::Bool=true, g=0.7, amax=maximum(amp))
     if normalizeG
         colormap = ColorScheme(normalizeGray.(colormap,g))
     end
@@ -277,9 +277,21 @@ end
 Transform a color lightness value in Lab space with the aim to output a color
 of similar color but with the specified gray value.
 """
-function normalizeGray(c::T,g=0.5) where {T<:Colorant}
+function normalizeGray(c::T,g=0.7) where {T<:Colorant}
     cluv = Lab(c)
+    # test range
+    minG = Gray.(Lab(0,cluv.a,cluv.b)).val
+    maxG = Gray.(Lab(100,cluv.a,cluv.b)).val
+    if g < minG
+      g = minG
+      @warn "Normalization of gray value failed, g ≈ $(ceil(minG,digits=3)) is used. Use g >= $(ceil(minG,digits=3)) for a consistent normalization."
+    elseif g > maxG
+      g = maxG
+      @warn "Normalization of gray value failed, g ≈ $(floor(maxG,digits=3)) is used. Use g <= $(floor(maxG,digits=3)) for a consistent normalization."
+    end
+
     l = find_zero(l->Gray.(Lab(l,cluv.a,cluv.b)).val-g, (0, 100))
+
     return T(Lab(l,cluv.a,cluv.b))
 end
 
