@@ -57,10 +57,25 @@ OC = colorize(I, [ColoringParams(0,1,"gray"), ColoringParams(0,1,"red"),],
      [0.0,0.0], [1.0,1.0])
 
 exportImage("img/coloring6.png", OC)
-#@testImg("coloring6.png")
+@testImg("coloring6.png")
 
 
+## Complex coloring
 
+# create 2D colorbar
+hues = range(0,2π,length=50)
+saturations = 0:0.05:1.0
+HS = vec(tuple.(hues, saturations'))
+D = kron(saturations,(exp.(im*hues))')
+# complex coloring
+Y = complexColoring(abs.(D), angle.(D))
+exportImage("img/coloring7.png", Y)
+@testImg("coloring7.png")
 
+# normalizeGray
+colormap = ImageUtils.ColorSchemes.phase
+@test ImageUtils.normalizeGray(colormap[1]) == RGB{Float64}(0.8979049716100672,0.6795060499249219,0.28645928277939586)
+@test @test_logs (:warn,"Normalization of gray value failed, g ≈ 0.056 is used. Use g >= 0.056 for a consistent normalization.") ImageUtils.normalizeGray(colormap[1],0.05) == RGB{Float64}(0.18396207457891003,0.0,0.0)
+@test @test_logs (:warn,"Normalization of gray value failed, g ≈ 0.925 is used. Use g <= 0.925 for a consistent normalization.") ImageUtils.normalizeGray(colormap[1],0.95) == RGB{Float64}(1.0,0.9603124734843839,0.5548057892335283)
 
 end

@@ -1,5 +1,5 @@
 export ColoringParams, colorize, blend, reorderColor, existing_cmaps, cmap,
-       overlay, linearDoge
+       overlay, linearDoge, complexColoring
 
 struct ColoringParams
   cmin::Float64
@@ -157,7 +157,10 @@ function complexColoring(amp, phase; colormap=ColorSchemes.phase, normalizeG::Bo
     # normalize amplitude
     I = amp./amax
     clamp01!(I) # using desaturation colormap: make sure to map intensity between 0 and 1
-    rawImage = I.*get(colormap,phase,(-π,Float64(π)))
+    rawImage = similar(I,RGBA{N0f8})
+    for n=1:length(I)
+      rawImage[n] = I[n]*get(colormap,phase[n],(-π,Float64(π)))
+    end
     return convert.(RGBA{N0f8},rawImage)
 end
 
