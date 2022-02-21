@@ -90,7 +90,10 @@ function colorize(inputimage::AbstractArray, wmin::T, wmax::T, cmap;
                   normalize=true) where {T<:Number}
   if normalize
     image = copy(inputimage)
-    image ./= maximum(image)
+    # minimum and maximum value of image
+    (d_min,d_max)=extrema(image)
+    #windowing c -> α ∈ [0,1]		
+		image = (d -> (d-d_min) / (d_max-d_min)).(image)
   else
     image = inputimage
   end
@@ -112,6 +115,7 @@ function _colorize!(image,C,wmin,wmax,cmap)
 end
 
 function _colorize(x::Number,wmin,wmax,cmap)
+  #scaling to discrete color
   L = length(cmap)
   y = (x-wmin) / (wmax-wmin)*(L-1) + 1
 
