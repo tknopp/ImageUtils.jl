@@ -93,7 +93,11 @@ function colorize(inputimage::AbstractArray, wmin::T, wmax::T, cmap;
     # minimum and maximum value of image
     (d_min,d_max)=extrema(image)
     #windowing c -> α ∈ [0,1]		
-		image = (d -> (d-d_min) / (d_max-d_min)).(image)
+    if d_max != d_min
+      image = (d -> (d-d_min) / (d_max-d_min)).(image)
+    elseif d_max != 0
+      image = image ./ d_max
+    end
   else
     image = inputimage
   end

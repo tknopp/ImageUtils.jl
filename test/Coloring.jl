@@ -17,7 +17,7 @@ IC = colorize(I, ColoringParams(0,1,"viridis"), 0.0, 1.0)
 exportImage("img/coloring2.png", IC)
 @testImg("coloring2.png")
 
-exportImage("img/coloring3.png", I, vmin=0.0, vmax=0.5, colormap="blue", normalize=true)
+exportImage("img/coloring3.png", I, vmin=0.0, vmax=0.5, colormap="vangogh", normalize=true)
 @testImg("coloring3.png")
 
 # Movie

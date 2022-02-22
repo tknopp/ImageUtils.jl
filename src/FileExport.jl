@@ -2,10 +2,26 @@ export exportImage, exportMovie, exportMovies
 
 exportImage(filename, im::ImageMeta; kargs...) = exportImage(filename, arraydata(im); kargs...)
 
-function exportImage(filename, im::AbstractMatrix{T}; vmin=0.0, vmax=1.0,
-                              colormap="gray", normalize=true, kargs...) where {T<:Real}
-  imC = colorize( im, vmin, vmax, cmap(colormap), normalize=normalize )
-  exportImage(filename, imC; kargs...)
+#old syntax
+function exportImage(filename, im::AbstractMatrix{T}; 
+                    colormap::Union{Array, String}="grays", kargs...) where {T<:Real}
+  exportImage(filename, im, colormap; kargs...)
+end
+
+function exportImage(filename, im::AbstractMatrix{T}, colorm::String;kargs...) where {T<:Real}
+  colorm = Symbol(colorm)
+  if colorm in keys(colorschemes)
+    return exportImage(filename, im, colorschemes[colorm].colors; kargs...)
+  else
+    @warn "Colorscheme $colorm is not defined in ColorSchemes.jl. Colorscheme grays is used instead."
+    return exportImage(filename, im, colorschemes[:grays].colors; kargs...)
+  end
+end
+
+function exportImage(filename, im::AbstractMatrix{T}, colorm::Vector{C}; vmin=0.0, vmax=1.0,
+                    normalize=true, pixelResizeFactor=1) where {T<:Real, C<:Colorant}
+  imC = colorize( im, vmin, vmax, colorm, normalize=normalize )
+  exportImage(filename, imC; pixelResizeFactor=pixelResizeFactor)
 end
 
 function exportImage(filename, im::AbstractMatrix{T}; pixelResizeFactor=1) where {T<:Colorant}
