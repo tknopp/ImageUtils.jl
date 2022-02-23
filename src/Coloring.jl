@@ -1,5 +1,5 @@
 export ColoringParams, colorize, blend, reorderColor, existing_cmaps, cmap,
-       overlay, linearDoge, complexColoring, RGBAGradient
+       overlay, linearDoge, complexColoring, RGBAGradient, important_cmaps
 
 struct ColoringParams
   cmin::Float64
@@ -215,7 +215,7 @@ function blend(bg::C, fg::C, alpha) where {C<:Color}
 end
 
 # Type stable?
-function blend(bg::C1, fg::C2) where {C1<:TransparentColor, C2<:TransparentColor}
+function blend(bg::C, fg::C) where {C<:TransparentColor}
   α = alpha(bg)
   β  = alpha(fg) * (one(α)-α)
   return mapc((x,y)->α*x + β*y, bg, fg)
@@ -352,7 +352,26 @@ cmap(colors::Vector{T}) where {T<:Tuple} = map(x->RGBA{N0f8}(x...),colors)
 # You should have received a copy of the CC0 legalcode along with this
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 # see https://github.com/BIDS/colormap/blob/master/colormaps.py
+"""
+cmap(str::AbstractString)
+
+Chooses colormap determined by str from existing_cmaps() and returns the colormap with a linear alpha gradient from 0 to 1.
+"""
 function cmap(str::AbstractString)::Vector{RGBA{Normed{UInt8,8}}}
+  if str == "gray"
+    return cmap(parse(Colorant,"white"))
+  elseif str in ["blue" "green" "red"]
+    return cmap(parse(Colorant,str))
+  else
+    colorm = Symbol(str)
+    if colorm in keys(colorschemes)
+      return RGBAGradient(colorschemes[colorm].colors,0,1)
+    else
+      @warn "$colorm is not existing in ColorSchemes.jl. Colorscheme grays is used instead."
+      return RGBAGradient(colorschemes[:grays].colors,0,1)
+    end
+  end
+#=
   if str == "gray"
     return cmap(colorant"white")
   elseif str == "blue"
@@ -400,11 +419,21 @@ function cmap(str::AbstractString)::Vector{RGBA{Normed{UInt8,8}}}
   else
     error("Colormap ", str, " not implemented!")
   end
+=#  
 end
 
 function existing_cmaps()
+  vcat(["gray", "blue", "green", "red"],String.(collect(keys(ColorSchemes.colorschemes))))
+  #=
   ["gray", "blue", "green", "red", "UKE", "redgreen", "redgreenalpha",
    "greenorangealpha", "greenblueredalpha", "bluegreenredalpha",
    "yellowredalpha", "tobi", "tobitr", "redwhite","timemap","UPthreshold",
    "perfusionmap","magma","inferno","plasma","Liver","viridis"]
+   =#
 end
+
+function important_cmaps()
+  ["gray", "blue", "green", "red", "grays", "viridis", "delta"]
+end
+
+

@@ -9,13 +9,7 @@ function exportImage(filename, im::AbstractMatrix{T};
 end
 
 function exportImage(filename, im::AbstractMatrix{T}, colorm::String;kargs...) where {T<:Real}
-  colorm = Symbol(colorm)
-  if colorm in keys(colorschemes)
-    return exportImage(filename, im, colorschemes[colorm].colors; kargs...)
-  else
-    @warn "Colorscheme $colorm is not defined in ColorSchemes.jl. Colorscheme grays is used instead."
-    return exportImage(filename, im, colorschemes[:grays].colors; kargs...)
-  end
+  return exportImage(filename, im, cmap(colorm); kargs...)
 end
 
 function exportImage(filename, im::AbstractMatrix{T}, colorm::Vector{C}; vmin=0.0, vmax=1.0,
@@ -56,13 +50,7 @@ function exportMovie(filename, data::AbstractArray{T,3};
 end
 
 function exportMovie(filename, data::AbstractArray{T,3}, colorm::String; kargs...) where {T<:Real}
-  colorm = Symbol(colorm)
-  if colorm in keys(colorschemes)
-    return exportMovie(filename, data, colorschemes[colorm].colors; kargs...)
-  else
-    @warn "Colorscheme $colorm is not defined in ColorSchemes.jl. Colorscheme grays is used instead."
-    return exportMovie(filename, data, colorschemes[:grays].colors; kargs...)
-  end
+  return exportMovie(filename, data, cmap(colorm); kargs...)
 end
 
 function exportMovie(filename, data::AbstractArray{T,3}, colorm::Vector{C}; vmin=0.0, vmax=1.0,

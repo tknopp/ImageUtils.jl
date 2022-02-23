@@ -13,7 +13,7 @@ IC = colorize(I .- 1, -1.0, 0.0,colorschemes[:grays].colors,normalize=false)
 exportImage("img/coloring1.png", IC)
 @testImg("coloring1.png")
 
-IC = colorize(I, 0.0, 1.0, RGBAGradient(colorschemes[:viridis].colors,0,1),normalize=false)
+IC = colorize(I, 0.0, 1.0, cmap("viridis"),normalize=false)
 exportImage("img/coloring2.png", IC)
 @testImg("coloring2.png")
 
@@ -37,7 +37,7 @@ exportMovies("img/movie.gif", [Itemp,Itemp,Itemp])
 O = zeros(N,N)
 O[10:30,10:30] .= 1.0
 
-OC = colorize(O, 0.0, 1.0, cmap("red"),normalize=false)
+OC = colorize(O, ColoringParams(0,1,"red"), 0.0, 1.0)
 
 over = overlay(IC, OC, cmap("red")[1])
 exportImage("img/coloring4.png", over)
