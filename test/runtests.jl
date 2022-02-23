@@ -3,6 +3,7 @@ using Test
 using Random
 using ImageMagick
 using TestImages
+using ColorSchemes
 
 mkpath("img/")
 mkpath("correct/")

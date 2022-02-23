@@ -7,13 +7,13 @@ Random.seed!(1)
 N = 64
 I = shepp_logan(N)
 
-IC = colorize(I, ColoringParams(0,1,"gray"), 0.0, 1.0)
-@test typeof(IC) == Array{RGBA{Normed{UInt8,8}},2}
+IC = colorize(I .- 1, -1.0, 0.0,colorschemes[:grays].colors,normalize=false)
+@test typeof(IC) == Array{RGB{Float64}, 2}
 
 exportImage("img/coloring1.png", IC)
 @testImg("coloring1.png")
 
-IC = colorize(I, ColoringParams(0,1,"viridis"), 0.0, 1.0)
+IC = colorize(I, 0.0, 1.0, RGBAGradient(colorschemes[:viridis].colors,0,1),normalize=false)
 exportImage("img/coloring2.png", IC)
 @testImg("coloring2.png")
 
@@ -37,7 +37,7 @@ exportMovies("img/movie.gif", [Itemp,Itemp,Itemp])
 O = zeros(N,N)
 O[10:30,10:30] .= 1.0
 
-OC = colorize(O, ColoringParams(0,1,"red"), 0.0, 1.0)
+OC = colorize(O, 0.0, 1.0, cmap("red"),normalize=false)
 
 over = overlay(IC, OC, cmap("red")[1])
 exportImage("img/coloring4.png", over)

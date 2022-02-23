@@ -1,5 +1,5 @@
 export ColoringParams, colorize, blend, reorderColor, existing_cmaps, cmap,
-       overlay, linearDoge, complexColoring
+       overlay, linearDoge, complexColoring, RGBAGradient
 
 struct ColoringParams
   cmin::Float64
@@ -76,7 +76,6 @@ function colorize(data::AbstractArray{T}, c::ColoringParams,
 
   return cdata
 end
-
 
 
 """
@@ -156,7 +155,9 @@ end
 
 linearDodge(images...) = linearDodge([images...])
 
-complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=0.7, amax=maximum(abs.(C))) where T<:Complex = complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g, amax=amax)
+function complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=0.7, amax=maximum(abs.(C))) where T<:Complex 
+  return complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g, amax=amax)
+end
 
 function complexColoring(amp, phase; colormap=ColorSchemes.phase, normalizeG::Bool=true, g=0.7, amax=maximum(amp))
     if normalizeG
@@ -214,7 +215,7 @@ function blend(bg::C, fg::C, alpha) where {C<:Color}
 end
 
 # Type stable?
-function blend(bg::C, fg::C) where {C<:TransparentColor}
+function blend(bg::C1, fg::C2) where {C1<:TransparentColor, C2<:TransparentColor}
   α = alpha(bg)
   β  = alpha(fg) * (one(α)-α)
   return mapc((x,y)->α*x + β*y, bg, fg)
@@ -304,6 +305,18 @@ function normalizeGray(c::T,g=0.7) where {T<:Colorant}
     l = find_zero(l->Gray.(Lab(l,cluv.a,cluv.b)).val-g, (0, 100))
 
     return T(Lab(l,cluv.a,cluv.b))
+end
+
+"""
+  RGBAGradient(colorm,α0,α1)
+
+Maps a linear alpha-value Gradient from α0 to α1 on a colormap.
+"""
+function RGBAGradient(colorm::Vector{C},α0,α1) where {C<:Colorant}
+  n = length(colorm)
+  colorm = convert.(RGB{N0f8},colorm)
+  αs = range(α0,α1,length=n)
+  [RGBA(colorm[i],αs[i]) for i=1:n]
 end
 
 """
