@@ -2,10 +2,20 @@ export exportImage, exportMovie, exportMovies
 
 exportImage(filename, im::ImageMeta; kargs...) = exportImage(filename, arraydata(im); kargs...)
 
-function exportImage(filename, im::AbstractMatrix{T}; vmin=0.0, vmax=1.0,
-                              colormap="gray", normalize=true, kargs...) where {T<:Real}
-  imC = colorize( im, vmin, vmax, cmap(colormap), normalize=normalize )
-  exportImage(filename, imC; kargs...)
+#old syntax
+function exportImage(filename, im::AbstractMatrix{T}; 
+                    colormap::Union{Array, String}="grays", kargs...) where {T<:Real}
+  exportImage(filename, im, colormap; kargs...)
+end
+
+function exportImage(filename, im::AbstractMatrix{T}, colorm::String;kargs...) where {T<:Real}
+  return exportImage(filename, im, cmap(colorm); kargs...)
+end
+
+function exportImage(filename, im::AbstractMatrix{T}, colorm::Vector{C}; vmin=0.0, vmax=1.0,
+                    normalize=true, pixelResizeFactor=1) where {T<:Real, C<:Colorant}
+  imC = colorize( im, vmin, vmax, colorm, normalize=normalize )
+  exportImage(filename, imC; pixelResizeFactor=pixelResizeFactor)
 end
 
 function exportImage(filename, im::AbstractMatrix{T}; pixelResizeFactor=1) where {T<:Colorant}
@@ -33,10 +43,20 @@ end
 
 exportMovie(filename, data::ImageMeta; kargs...) = exportMovie(filename, data.data; kargs...)
 
-function exportMovie(filename, data::AbstractArray{T,3}; vmin=0.0, vmax=1.0,
-                              colormap="gray", normalize=true, kargs...) where {T<:Real}
-  imC = colorize( data, vmin, vmax, cmap(colormap), normalize=normalize )
-  exportMovie(filename, imC; kargs...)
+#old syntax
+function exportMovie(filename, data::AbstractArray{T,3};
+                    colormap::Union{Array, String}="grays", kargs...) where {T<:Real}
+  exportMovie(filename, data, colormap; kargs...)
+end
+
+function exportMovie(filename, data::AbstractArray{T,3}, colorm::String; kargs...) where {T<:Real}
+  return exportMovie(filename, data, cmap(colorm); kargs...)
+end
+
+function exportMovie(filename, data::AbstractArray{T,3}, colorm::Vector{C}; vmin=0.0, vmax=1.0,
+                    normalize=true, pixelResizeFactor=1) where {T<:Real, C<:Colorant}
+    imC = colorize( data, vmin, vmax, colorm, normalize=normalize )
+    exportMovie(filename, imC; pixelResizeFactor=pixelResizeFactor)
 end
 
 function exportMovie(filename, data::AbstractArray{T,3}; pixelResizeFactor=1) where {T<:Colorant}

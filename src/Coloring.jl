@@ -1,5 +1,5 @@
 export ColoringParams, colorize, blend, reorderColor, existing_cmaps, cmap,
-       overlay, linearDoge, complexColoring
+       overlay, linearDoge, complexColoring, RGBAGradient, important_cmaps
 
 struct ColoringParams
   cmin::Float64
@@ -78,7 +78,6 @@ function colorize(data::AbstractArray{T}, c::ColoringParams,
 end
 
 
-
 """
   coloredimage = colorize(inputimage,wmin,wmax,cmap)
 
@@ -90,7 +89,14 @@ function colorize(inputimage::AbstractArray, wmin::T, wmax::T, cmap;
                   normalize=true) where {T<:Number}
   if normalize
     image = copy(inputimage)
-    image ./= maximum(image)
+    # minimum and maximum value of image
+    (d_min,d_max)=extrema(image)
+    #windowing c -> α ∈ [0,1]		
+    if d_max != d_min
+      image = (d -> (d-d_min) / (d_max-d_min)).(image)
+    elseif d_max != 0
+      image = image ./ d_max
+    end
   else
     image = inputimage
   end
@@ -112,6 +118,7 @@ function _colorize!(image,C,wmin,wmax,cmap)
 end
 
 function _colorize(x::Number,wmin,wmax,cmap)
+  #scaling to discrete color
   L = length(cmap)
   y = (x-wmin) / (wmax-wmin)*(L-1) + 1
 
@@ -148,7 +155,9 @@ end
 
 linearDodge(images...) = linearDodge([images...])
 
-complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=0.7, amax=maximum(abs.(C))) where T<:Complex = complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g, amax=amax)
+function complexColoring(C::Array{T,2}; colormap=ColorSchemes.phase, normalizeG=true, g=0.7, amax=maximum(abs.(C))) where T<:Complex 
+  return complexColoring(abs.(C),angle.(C),colormap=colormap, normalizeG=normalizeG, g=g, amax=amax)
+end
 
 function complexColoring(amp, phase; colormap=ColorSchemes.phase, normalizeG::Bool=true, g=0.7, amax=maximum(amp))
     if normalizeG
@@ -299,6 +308,18 @@ function normalizeGray(c::T,g=0.7) where {T<:Colorant}
 end
 
 """
+  RGBAGradient(colorm,α0,α1)
+
+Maps a linear alpha-value Gradient from α0 to α1 on a colormap.
+"""
+function RGBAGradient(colorm::Vector{C},α0,α1) where {C<:Colorant}
+  n = length(colorm)
+  colorm = convert.(RGB{N0f8},colorm)
+  αs = range(α0,α1,length=n)
+  [RGBA(colorm[i],αs[i]) for i=1:n]
+end
+
+"""
     cmap(color)
 
 Creates a colormap from a single `color`, with a color gradient from
@@ -331,7 +352,26 @@ cmap(colors::Vector{T}) where {T<:Tuple} = map(x->RGBA{N0f8}(x...),colors)
 # You should have received a copy of the CC0 legalcode along with this
 # work.  If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
 # see https://github.com/BIDS/colormap/blob/master/colormaps.py
+"""
+cmap(str::AbstractString)
+
+Chooses colormap determined by str from existing_cmaps() and returns the colormap with a linear alpha gradient from 0 to 1.
+"""
 function cmap(str::AbstractString)::Vector{RGBA{Normed{UInt8,8}}}
+  if str == "gray"
+    return cmap(parse(Colorant,"white"))
+  elseif str in ["blue" "green" "red"]
+    return cmap(parse(Colorant,str))
+  else
+    colorm = Symbol(str)
+    if colorm in keys(colorschemes)
+      return RGBAGradient(colorschemes[colorm].colors,0,1)
+    else
+      @warn "$colorm is not existing in ColorSchemes.jl. Colorscheme grays is used instead."
+      return RGBAGradient(colorschemes[:grays].colors,0,1)
+    end
+  end
+#=
   if str == "gray"
     return cmap(colorant"white")
   elseif str == "blue"
@@ -379,11 +419,21 @@ function cmap(str::AbstractString)::Vector{RGBA{Normed{UInt8,8}}}
   else
     error("Colormap ", str, " not implemented!")
   end
+=#  
 end
 
 function existing_cmaps()
+  vcat(["gray", "blue", "green", "red"],String.(collect(keys(ColorSchemes.colorschemes))))
+  #=
   ["gray", "blue", "green", "red", "UKE", "redgreen", "redgreenalpha",
    "greenorangealpha", "greenblueredalpha", "bluegreenredalpha",
    "yellowredalpha", "tobi", "tobitr", "redwhite","timemap","UPthreshold",
    "perfusionmap","magma","inferno","plasma","Liver","viridis"]
+   =#
 end
+
+function important_cmaps()
+  ["gray", "blue", "green", "red", "grays", "viridis", "delta"]
+end
+
+

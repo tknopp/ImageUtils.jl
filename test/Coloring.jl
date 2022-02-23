@@ -7,17 +7,17 @@ Random.seed!(1)
 N = 64
 I = shepp_logan(N)
 
-IC = colorize(I, ColoringParams(0,1,"gray"), 0.0, 1.0)
-@test typeof(IC) == Array{RGBA{Normed{UInt8,8}},2}
+IC = colorize(I .- 1, -1.0, 0.0,colorschemes[:grays].colors,normalize=false)
+@test typeof(IC) == Array{RGB{Float64}, 2}
 
 exportImage("img/coloring1.png", IC)
 @testImg("coloring1.png")
 
-IC = colorize(I, ColoringParams(0,1,"viridis"), 0.0, 1.0)
+IC = colorize(I, 0.0, 1.0, cmap("viridis"),normalize=false)
 exportImage("img/coloring2.png", IC)
 @testImg("coloring2.png")
 
-exportImage("img/coloring3.png", I, vmin=0.0, vmax=0.5, colormap="blue", normalize=true)
+exportImage("img/coloring3.png", I, vmin=0.0, vmax=0.5, colormap="vangogh", normalize=true)
 @testImg("coloring3.png")
 
 # Movie
