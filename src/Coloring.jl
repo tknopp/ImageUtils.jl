@@ -433,7 +433,7 @@ function existing_cmaps()
 end
 
 function important_cmaps()
-  ["gray", "blue", "green", "red", "grays", "viridis", "delta"]
+  ["gray", "blue", "green", "red", "grays", "viridis", "plasma", "magma", "davos", "heat", "delta", "cork", "vik", "phase"]
 end
 
 
