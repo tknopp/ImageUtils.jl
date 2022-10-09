@@ -34,3 +34,20 @@ function makeAxisArray(array::Array{T,3}, pixelspacing, offset) where T
 		 Axis{:z}(range(offset[3],step=pixelspacing[3],length=N[3])))
   return im
 end
+
+function makeAxisArray(I::AbstractArray{T,6}, spacing::Vector{Float64}) where T
+
+  offset = [0.0, 0.0, 0.0]*Unitful.mm
+
+  sp = uconvert.(Unitful.mm, spacing*Unitful.m)
+
+  im = AxisArray(I,
+		   Axis{:x}(range(offset[1], step=sp[1], length=size(I,1))),
+		   Axis{:y}(range(offset[2], step=sp[2], length=size(I,2))),
+		   Axis{:z}(range(offset[3], step=sp[3], length=size(I,3))),
+		   Axis{:echos}(1:size(I,4)),
+       Axis{:coils}(1:size(I,5)),
+       Axis{:repetitions}(1:size(I,6)))
+
+  return im
+end

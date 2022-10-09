@@ -13,6 +13,7 @@ using Roots
 using Statistics
 using TestImages
 using Unitful
+using NIfTI
 
 @reexport using Colors
 @reexport using FixedPointNumbers
@@ -30,6 +31,7 @@ include("PerfusionMaps.jl")
 include("FileExport.jl")
 include("Permutation.jl")
 include("AnalyzeNifti.jl")
+include("Nifti.jl") # TODO: Proper integration
 
 shepp_logan(args...) = Float64.(TestImages.shepp_logan(args...))
 
