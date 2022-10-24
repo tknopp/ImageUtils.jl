@@ -7,7 +7,7 @@ function loadImage(filename::String)
 end
 
 function saveImage(filename::String, im::AbstractArray{T,6}, makeAbs::Bool=false) where T
-  voxel_size = ustrip.(uconvert.(u"m", pixelspacing(im)[1:3]))
+  voxel_size = ustrip.(uconvert.(u"mm", pixelspacing(im)[1:3]))
 
   orientation = zeros(Float32, 3, 4)
   orientation[1,1] = orientation[2,2] = orientation[3,3] = 1.0
