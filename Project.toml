@@ -1,7 +1,7 @@
 name = "ImageUtils"
 uuid = "8ad4436d-4835-5a14-8bce-3ae014d2950b"
 authors = ["Tobias Knopp <tobias@knoppweb.de>"]
-version = "0.2.9"
+version = "0.2.10"
 
 [deps]
 AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
@@ -23,21 +23,21 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 NIfTI = "a3a9e032-41b5-5fc4-967a-a6b7a19844d3"
 
 [compat]
-AxisArrays = "0.3, 0.4"
+AxisArrays = "0.4"
 ColorSchemes = "3"
-ColorVectorSpace = "0.7, 0.8, 0.9"
-Colors = "0.9, 0.12"
-FFTW = "0.2, 1.0"
-FixedPointNumbers = "0.6, 0.8"
-ImageMagick = "1.1"
-Images = "0.22, 0.23, 0.24, 0.25"
-Interpolations = "0.12, 0.13, 0.14"
-Reexport = "0.2, 1.0"
-Roots = "1"
+ColorVectorSpace = "0.10"
+Colors = "0.12"
+FFTW = "1.0"
+FixedPointNumbers = "0.8"
+ImageMagick = "1.3"
+Images = "0.26"
+Interpolations = "0.14"
+Reexport = "1.0"
+Roots = "1,2"
 TestImages = "1.3.1"
-Unitful = "0.17, 1.2"
-julia = "1.3"
-NIfTI = "0.5"
+Unitful = "1.2"
+julia = "1.6"
+NIfTI = "0.6"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
