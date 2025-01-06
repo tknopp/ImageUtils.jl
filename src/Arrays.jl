@@ -35,11 +35,10 @@ function makeAxisArray(array::Array{T,3}, pixelspacing, offset) where T
   return im
 end
 
-function makeAxisArray(I::AbstractArray{T,6}, spacing::Vector{Float64}) where T
-
+function makeAxisArray(I::AbstractArray{T,6}, spacing) where T
   offset = [0.0, 0.0, 0.0]*Unitful.mm
 
-  sp = uconvert.(Unitful.mm, spacing*Unitful.m)
+  sp = uconvert.(Unitful.mm, spacing.*Unitful.m)
 
   im = AxisArray(I,
 		   Axis{:x}(range(offset[1], step=sp[1], length=size(I,1))),

@@ -19,3 +19,4 @@ end
 include("Coloring.jl")
 include("Slicing.jl")
 include("Transformation.jl")
+include("IO.jl")
