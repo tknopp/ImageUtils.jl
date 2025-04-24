@@ -46,7 +46,8 @@ function colorize(data::AbstractArray{T}, coloring::Vector{ColoringParams},
       if size(data,1) != 2
         error("Data needs to be of length 2")
       end
-      return complexColoring(sliceColorDim(data,1), sliceColorDim(data,2))
+      lowerBound, higherBound = getBounds(data, coloring[1], minval[1], maxval[1]) # scale cmax
+      return complexColoring(sliceColorDim(data,1), sliceColorDim(data,2), amax=higherBound)
     else
       return colorize(data, coloring, minval, maxval)
     end
